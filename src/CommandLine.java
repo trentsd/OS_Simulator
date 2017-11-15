@@ -49,8 +49,7 @@ public class CommandLine {
                         System.out.println("RESET\n"); //debug
                         break;
                     case "EXIT":
-                        System.out.println("Exiting!");
-                        System.exit(STATUS_NORMAL);
+                        cliExit();
                         break;
                     default:
                         System.out.println(commandToken + " is not recognized as a command. Please try again.");
@@ -60,5 +59,10 @@ public class CommandLine {
                 System.out.println("HAHA LOL GIT GUD SCRUB");
             }
         }
+    }
+
+    private void cliExit(){
+        System.out.println("Exiting!");
+        System.exit(STATUS_NORMAL);
     }
 }
