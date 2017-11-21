@@ -25,39 +25,42 @@ public class CommandLine {
             try {
                 String input = userInput.readLine();
                 this.cli = new Scanner(input);
-                String commandToken = cli.next();
 
-                switch(commandToken.toUpperCase()){
-                    case "PROC":
-                        //do PROC here
-                        System.out.println("PROC\n"); //debug
-                        break;
-                    case "MEM":
-                        //do MEM here
-                        System.out.println("MEM\n"); //debug
-                        break;
-                    case "LOAD":
-                        //do LOAD here
-                        System.out.println("LOAD\n"); //debug
-                        break;
-                    case "EXE":
-                        //do EXE here
-                        System.out.println("EXE\n"); //debug
-                        break;
-                    case "RESET":
-                        //do RESET here
-                        System.out.println("RESET\n"); //debug
-                        break;
-                    case "EXIT":
-                        cliExit();
-                        break;
-                    default:
-                        System.out.println(commandToken + " is not recognized as a command. Please try again.");
+                if(cli.hasNext()) {
+                    String commandToken = cli.next();
+
+                    switch (commandToken.toUpperCase()) {
+                        case "PROC":
+                            //do PROC here
+                            System.out.println("PROC\n"); //debug
+                            break;
+                        case "MEM":
+                            //do MEM here
+                            System.out.println("MEM\n"); //debug
+                            break;
+                        case "LOAD":
+                            //do LOAD here
+                            System.out.println("LOAD\n"); //debug
+                            break;
+                        case "EXE":
+                            //do EXE here
+                            System.out.println("EXE\n"); //debug
+                            break;
+                        case "RESET":
+                            //do RESET here
+                            System.out.println("RESET\n"); //debug
+                            break;
+                        case "EXIT":
+                            cliExit();
+                            break;
+                        default:
+                            System.out.println(commandToken + " is not recognized as a command. Please try again.");
+                    }
                 }
-
             } catch(IOException e){
                 System.out.println("HAHA LOL GIT GUD SCRUB");
             }
+
         }
     }
 
