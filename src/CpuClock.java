@@ -44,4 +44,8 @@ public class CpuClock extends Thread{
         //System.out.println("added proc");
     }
 
+    public void dispose(){
+        return;
+    }
+
 }
