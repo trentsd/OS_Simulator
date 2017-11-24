@@ -6,10 +6,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Main {
 
     public static void main(String[] args){
+        BlockingQueue queue = new LinkedBlockingQueue();
+        CpuClock clock = new CpuClock(queue);
+        new Thread(clock).start();
 
-        //BlockingQueue queue = new LinkedBlockingQueue();
-        //CpuClock clock = new CpuClock(queue);
-        //new Thread(clock).start();
+        CommandLine cli = new CommandLine(queue);
 
         //CommandLine cli = new CommandLine(queue);
 

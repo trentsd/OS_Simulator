@@ -16,56 +16,68 @@ public class CommandLine {
     private final byte STATUS_NORMAL = 0;
     private final BlockingQueue queue;
 
-    public CommandLine(BlockingQueue q){
-        this.userInput = new BufferedReader(new InputStreamReader(System.in));
+    public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
-        runCLI();
+
+        if(debug) {
+            this.userInput = new BufferedReader(new InputStreamReader(System.in));
+            runDebugCLI();
+        }
     }
 
-    private void runCLI(){
+    private void runDebugCLI(){
         while(true) {
             System.out.print("USER$ ");
             try {
                 String input = userInput.readLine();
-                this.cli = new Scanner(input);
-                String commandToken = cli.next();
-
-                switch(commandToken.toUpperCase()){
-                    case "PROC":
-                        //do PROC here
-                        System.out.println("PROC\n"); //debug
-                        break;
-                    case "MEM":
-                        //do MEM here
-                        System.out.println("MEM\n"); //debug
-                        break;
-                    case "LOAD":
-                        //do LOAD here
-                        System.out.println("LOAD\n"); //debug
-                        break;
-                    case "EXE":
-                        //do EXE here
-                        System.out.println("EXE\n"); //debug
-                        queue.put((int)100);
-                        //todo make this dynamic, add flags for input
-                        break;
-                    case "RESET":
-                        //do RESET here
-                        System.out.println("RESET\n"); //debug
-                        break;
-                    case "EXIT":
-                        System.out.println("Exiting!");
-                        System.exit(STATUS_NORMAL);
-                        break;
-                    default:
-                        System.out.println(commandToken + " is not recognized as a command. Please try again.");
-                }
-
+                interpretInput(input);
             } catch(IOException e){
                 System.out.println("HAHA LOL GIT GUD SCRUB");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
+    }
+
+    public String interpretInput(String line){
+        String output;
+
+        this.cli = new Scanner(line);
+        String commandToken = cli.next();
+
+        switch(commandToken.toUpperCase()){
+            case "PROC":
+                //do PROC here
+                output = "PROC\n"; //debug
+                break;
+            case "MEM":
+                //do MEM here
+                output = "MEM\n"; //debug
+                break;
+            case "LOAD":
+                //do LOAD here
+                output = "LOAD\n"; //debug
+                break;
+            case "EXE":
+                //do EXE here
+                output = "EXE\n"; //debug
+                try {
+                    queue.put(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                //todo make this dynamic, add flags for input
+                break;
+            case "RESET":
+                //do RESET here
+                output = "RESET\n"; //debug
+                break;
+            case "EXIT":
+                output = "Exiting!";
+                //System.exit(STATUS_NORMAL);
+                break;
+            default:
+                output = commandToken + " is not recognized as a command. Please try again.";
+        }
+
+        return output;
     }
 }
