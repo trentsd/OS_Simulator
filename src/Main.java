@@ -10,9 +10,8 @@ public class Main {
         CpuClock clock = new CpuClock(queue);
         new Thread(clock).start();
 
-        CommandLine cli = new CommandLine(queue);
+        CommandLine cli = new CommandLine(queue, false);
 
-        //CommandLine cli = new CommandLine(queue);
 
         Application.launch(GraphicalUserInterface.class);
 
