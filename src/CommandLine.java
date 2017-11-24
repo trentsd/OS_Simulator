@@ -72,7 +72,7 @@ public class CommandLine {
                 break;
             case "EXIT":
                 output = "Exiting!";
-                //System.exit(STATUS_NORMAL);
+                System.exit(STATUS_NORMAL);
                 break;
             default:
                 output = commandToken + " is not recognized as a command. Please try again.";
