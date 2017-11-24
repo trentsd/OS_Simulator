@@ -3,7 +3,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Main {
     public static void main(String[] args){
-        //lol ban me
         BlockingQueue queue = new LinkedBlockingQueue();
         CpuClock clock = new CpuClock(queue);
         new Thread(clock).start();
