@@ -7,7 +7,7 @@ public class Main {
         CpuClock clock = new CpuClock(queue);
         new Thread(clock).start();
 
-        CommandLine cli = new CommandLine(queue);
+        CommandLine cli = new CommandLine(queue, true);
 
 
     }

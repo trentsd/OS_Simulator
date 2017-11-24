@@ -45,39 +45,63 @@ public class CommandLine {
 
         switch(commandToken.toUpperCase()){
             case "PROC":
-                //do PROC here
-                output = "PROC\n"; //debug
+                output = doProc();
                 break;
             case "MEM":
-                //do MEM here
-                output = "MEM\n"; //debug
+                output = doMem();
                 break;
             case "LOAD":
-                //do LOAD here
-                output = "LOAD\n"; //debug
+                output = doLoad();
                 break;
             case "EXE":
-                //do EXE here
-                output = "EXE\n"; //debug
-                try {
-                    queue.put(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                //todo make this dynamic, add flags for input
+                output = doExe();
                 break;
             case "RESET":
-                //do RESET here
-                output = "RESET\n"; //debug
+                output = doReset();
                 break;
             case "EXIT":
-                output = "Exiting!";
-                System.exit(STATUS_NORMAL);
+                output = doExit();
                 break;
             default:
                 output = commandToken + " is not recognized as a command. Please try again.";
         }
 
         return output;
+    }
+
+    private String doProc(){
+        String str = "PROC\n";
+        return str;
+    }
+
+    private String doMem(){
+        String str = "MEM\n";
+        return str;
+    }
+
+    private String doLoad(){
+        String str = "LOAD\n";
+        return str;
+    }
+
+    private String doExe(){
+        String str = "EXE\n";
+        try {
+            queue.put(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return str;
+    }
+
+    private String doReset(){
+        String str = "RESET\n";
+        return str;
+    }
+
+    private String doExit(){
+        String str = "Exiting!";
+        return str;
     }
 }
