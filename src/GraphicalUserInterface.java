@@ -1,13 +1,13 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
@@ -22,27 +22,43 @@ import java.util.concurrent.ThreadFactory;
 
 public class GraphicalUserInterface extends Application{
 
-    public Stage window;
+    public static Stage window;
+    public CommandLine cli;
 
     //crap for graphs
     private static  final int MAX_DATA_POINTS = 50;
     private int xSeriesData = 0;
-    private XYChart.Series<Number, Number> cpuSeries = new XYChart.Series<>();
     private XYChart.Series<Number, Number> memSeries = new XYChart.Series<>();
     private ExecutorService executor;
-    private ConcurrentLinkedQueue<Number> cpuDataQueue = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<Number> memDataQueue = new ConcurrentLinkedQueue<>();
     private NumberAxis xAxis;
 
+    private TableView table = new TableView();
+    private TableColumn procCol;
+    private TableColumn totalCol;
+    private TableColumn remainingCol;
+
+    private VBox infoBox = new VBox();
+
     private void init(Stage window, BorderPane pane){
+        //line chart variables/setup
         xAxis = new NumberAxis(0, MAX_DATA_POINTS, MAX_DATA_POINTS / 10);
         xAxis.setForceZeroInRange(false);
         xAxis.setAutoRanging(false);
         xAxis.setTickLabelsVisible(false);
         xAxis.setTickMarkVisible(false);
         xAxis.setMinorTickVisible(false);
-
         NumberAxis yAxis = new NumberAxis();
+
+        //table variables
+        table.setEditable(true);
+        procCol = new TableColumn("Process ID");
+        procCol.setPrefWidth(100);
+        totalCol = new TableColumn("Total Cycles");
+        totalCol.setPrefWidth(100);
+        remainingCol = new TableColumn("Remaining Cycles");
+        remainingCol.setPrefWidth(150);
+        table.getColumns().addAll(procCol, totalCol, remainingCol);
 
         final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(xAxis, yAxis) {
             // Override to remove symbols on each data point
@@ -55,12 +71,17 @@ public class GraphicalUserInterface extends Application{
         lineChart.setTitle("Resourcce Monitor");
         lineChart.setHorizontalGridLinesVisible(true);
 
-        cpuSeries.setName("CPU Usage");
         memSeries.setName("Memory Usage");
 
-        lineChart.getData().addAll(cpuSeries, memSeries);
+        lineChart.getData().add(memSeries);
 
-        pane.setRight(lineChart);
+
+        infoBox.getChildren().addAll(lineChart, table);
+        pane.setRight(infoBox);
+
+        cli = Main.cli;
+
+        System.out.println("log: GUI window created successfully.");
     }
 
 
@@ -95,14 +116,42 @@ public class GraphicalUserInterface extends Application{
             @Override
             public void handle(KeyEvent keyEvent) {
                 if(keyEvent.getCode() == KeyCode.ENTER) {
-                    display.appendText(commandInput.getText() + "\n");
+                    //display.appendText(commandInput.getText() + "\n");
+                    String input = commandInput.getText();
+                    String output = cli.interpretInput(input);
+                    display.appendText(output);
+                    //display.appendText(cli.interpretInput(commandInput.getText()));
                     commandInput.setText("");
                 }
             }
         });
 
 
-        vertBox.getChildren().addAll(display, commandInput);
+        //Scheduler buttons
+        HBox buttons = new HBox();
+
+        Button roundRobinButton = new Button("RR");
+        roundRobinButton.setOnAction(e -> {
+            System.out.println("log: Round Robbin selected.");
+            Main.selectScheduler(0);
+        });
+
+        Button firstInButton = new Button("FiFs");
+        firstInButton.setOnAction(e -> {
+            System.out.println("log: FiFs selected.");
+            Main.selectScheduler(1);
+        });
+
+        Button shortestButton = new Button("SRTF");
+        shortestButton.setOnAction(e -> {
+            System.out.println("log: SRTF selected.");
+            Main.selectScheduler(2);
+        });
+
+        buttons.getChildren().addAll(roundRobinButton, firstInButton, shortestButton);
+
+
+        vertBox.getChildren().addAll(display, commandInput, buttons);
 
         mainPane.setLeft(vertBox);
 
@@ -135,7 +184,7 @@ public class GraphicalUserInterface extends Application{
         public void run() {
             try {
                 // add a item of random data to queues todo: make this actually pull data
-                cpuDataQueue.add(Math.random());
+
                 memDataQueue.add(Math.random());
 
                 Thread.sleep(500);
@@ -161,15 +210,11 @@ public class GraphicalUserInterface extends Application{
     //take data from queue and put it in graph data
     private void addDataToSeries() {
         for (int i = 0; i < 20; i++) { //add 20 numbers to the plot
-            if (cpuDataQueue.isEmpty()) break;
-            cpuSeries.getData().add(new XYChart.Data<>(xSeriesData++, cpuDataQueue.remove()));
+            if (memDataQueue.isEmpty()) break;
             memSeries.getData().add(new XYChart.Data<>(xSeriesData++, memDataQueue.remove()));
 
         }
         // remove points to keep us at no more than MAX_DATA_POINTS
-        if (cpuSeries.getData().size() > MAX_DATA_POINTS) {
-            cpuSeries.getData().remove(0, cpuSeries.getData().size() - MAX_DATA_POINTS);
-        }
         if (memSeries.getData().size() > MAX_DATA_POINTS) {
             memSeries.getData().remove(0, memSeries.getData().size() - MAX_DATA_POINTS);
         }
@@ -179,8 +224,22 @@ public class GraphicalUserInterface extends Application{
         xAxis.setUpperBound(xSeriesData - 1);
     }
 
+    public void show(){
+        launch();
+    }
+
+    public void addProcInfo(String name, int totalCycles, int remainingCycles){
+        /*
+        procCol.setCellValueFactory(param ->
+                new ReadOnlyObjectWrapper<>(param.getValue().get(name))
+        );*/
+    }
+
 
     private void closeProgram(){
         window.close();
+        System.out.println("log: GUI window closed successfully.");
+        return;
     }
+
 }

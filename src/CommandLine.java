@@ -87,7 +87,13 @@ public class CommandLine {
     private String doExe(){
         String str = "EXE\n";
         try {
+            queue.put(25);
+            queue.put(1000);
+            Thread.sleep(400);
             queue.put(100);
+            queue.put(50);
+            Thread.sleep(4000);
+            queue.put(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -104,4 +110,5 @@ public class CommandLine {
         String str = "Exiting!";
         return str;
     }
+
 }
