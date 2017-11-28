@@ -4,16 +4,15 @@ import java.util.PriorityQueue;
 public class MainMemory {
 
     /**
-     * Constants for frame size and number of frames.
-     * FRAME_SIZE used in memory allocation for processes.
+     * Constants for frame size and number of frames
      */
     //TODO Determine proper values for these numbers
     private static final int FRAME_SIZE = 4;
     private static final int NUM_FRAMES = 8;
 
     /**
-     * Each frame is just an integer storing the pid of the process that is storing "data" in it.
-     * We do not deal with the actual data stored in a frame for this project, so memory is just a 1D array of frames.
+     * Each frame is just an array of integers (our fake data)
+     * Memory is just an array of frameTable
      */
     private int[] frameTable = new int[NUM_FRAMES];
 
@@ -25,7 +24,9 @@ public class MainMemory {
 
     /**
      * No-Arg Constructor.
-     * Initializes the list of free frames as all frames, since nothing has been allocated.
+     * Initializes frameTable to empty 2D int array.
+     * Initializes usedFrames to 0.
+     * Initializes freeFrames to NUM_FRAMES.
      */
     public MainMemory() {
         for (int i = 0; i < frameTable.length; i++) {
@@ -34,10 +35,11 @@ public class MainMemory {
     }
 
     /**
-     * Takes a frame from the front of freeFrames and puts data in it, removes that frame from the list of free frames.
-     * @param data The data to go into a frame //TODO determine what goes in this space (possibly pid or page table number)
+     * @param data The data to go into a frame. This should come from the Memory Management Unit.
+     *             It should not be possible to pass an array larger than a single frame.
+     * @throws IllegalArgumentException if the int[] data is larger than a single frame
      */
-    public int initFrame(int data) {
+    public int initFrame(int data) throws IllegalArgumentException {
         Integer freeFrame = this.freeFrames.poll();
         if (freeFrames.size() == 0) {
             //TODO handle case where poll() returns null (i.e. there are no free frames)
@@ -68,15 +70,11 @@ public class MainMemory {
         }
     }
 
-    /**
-     * Calculates and returns the percentage of frames that are currently in use
-     * @return The percent of physical memory being used
-     */
     public double calcMemData(){
         double totalFrames = (double) NUM_FRAMES;
         double numFreeFrames = (double) freeFrames.size();
         double numOccFrames = totalFrames - numFreeFrames;
-        return (numOccFrames/totalFrames)*100;
+        return numOccFrames/totalFrames;
     }
 
     public static void main(String[] args) {
