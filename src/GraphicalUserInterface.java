@@ -1,6 +1,7 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
@@ -37,11 +38,16 @@ public class GraphicalUserInterface extends Application{
     private TableColumn procCol;
     private TableColumn totalCol;
     private TableColumn remainingCol;
+    private ObservableList<ProcessControlBlock> procsObserver;
 
+
+    private BorderPane pane;
     private VBox infoBox = new VBox();
 
     private void init(Stage window, BorderPane pane){
         //line chart variables/setup
+        this.pane = pane;
+
         xAxis = new NumberAxis(0, MAX_DATA_POINTS, MAX_DATA_POINTS / 10);
         xAxis.setForceZeroInRange(false);
         xAxis.setAutoRanging(false);
@@ -50,15 +56,7 @@ public class GraphicalUserInterface extends Application{
         xAxis.setMinorTickVisible(false);
         NumberAxis yAxis = new NumberAxis();
 
-        //table variables
-        table.setEditable(true);
-        procCol = new TableColumn("Process ID");
-        procCol.setPrefWidth(100);
-        totalCol = new TableColumn("Total Cycles");
-        totalCol.setPrefWidth(100);
-        remainingCol = new TableColumn("Remaining Cycles");
-        remainingCol.setPrefWidth(150);
-        table.getColumns().addAll(procCol, totalCol, remainingCol);
+
 
         final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(xAxis, yAxis) {
             // Override to remove symbols on each data point
@@ -74,10 +72,7 @@ public class GraphicalUserInterface extends Application{
         memSeries.setName("Memory Usage");
 
         lineChart.getData().add(memSeries);
-
-
-        infoBox.getChildren().addAll(lineChart, table);
-        pane.setRight(infoBox);
+        infoBox.getChildren().add(lineChart);
 
         cli = Main.cli;
 
@@ -92,6 +87,34 @@ public class GraphicalUserInterface extends Application{
         window = stage;
         window.setTitle("DANK.os");
 
+        //table setup
+        procsObserver = FXCollections.observableArrayList();
+
+        table.setEditable(true);
+
+        procCol = new TableColumn("Process ID");
+        procCol.setPrefWidth(100);
+        procCol.setCellValueFactory(
+                new PropertyValueFactory<>("name")
+        );
+
+        totalCol = new TableColumn("Total Cycles");
+        totalCol.setPrefWidth(100);
+        totalCol.setCellValueFactory(
+                new PropertyValueFactory<>("cyclesRequired")
+        );
+
+        remainingCol = new TableColumn("Remaining Cycles");
+        remainingCol.setPrefWidth(150);
+        remainingCol.setCellValueFactory(
+                new PropertyValueFactory<>("cyclesRemaining")
+        );
+
+        table.setItems(procsObserver);
+        table.getColumns().addAll(procCol, totalCol, remainingCol);
+
+        infoBox.getChildren().add(table);
+        mainPane.setRight(infoBox);
 
         //execute the close method on clicking the exit button
         window.setOnCloseRequest(e -> {
@@ -116,11 +139,19 @@ public class GraphicalUserInterface extends Application{
             @Override
             public void handle(KeyEvent keyEvent) {
                 if(keyEvent.getCode() == KeyCode.ENTER) {
-                    //display.appendText(commandInput.getText() + "\n");
+
                     String input = commandInput.getText();
-                    String output = cli.interpretInput(input);
-                    display.appendText(output);
-                    //display.appendText(cli.interpretInput(commandInput.getText()));
+
+                    new Thread(new Runnable(){
+                        @Override
+                        public void run() {
+                            String output = cli.interpretInput(input);
+
+                            //update console
+                            display.appendText(output);
+                        }
+                    }).start();
+
                     commandInput.setText("");
                 }
             }
@@ -184,9 +215,8 @@ public class GraphicalUserInterface extends Application{
         public void run() {
             try {
                 // add a item of random data to queues todo: make this actually pull data
-
+                updateObserver();
                 memDataQueue.add(Math.random());
-
                 Thread.sleep(500);
                 executor.execute(this);
 
@@ -228,11 +258,11 @@ public class GraphicalUserInterface extends Application{
         launch();
     }
 
-    public void addProcInfo(String name, int totalCycles, int remainingCycles){
-        /*
-        procCol.setCellValueFactory(param ->
-                new ReadOnlyObjectWrapper<>(param.getValue().get(name))
-        );*/
+    public void updateObserver(){
+        procsObserver.clear();
+        for(int i = 0; i < CpuClock.procs.size(); i++){
+            procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
+        }
     }
 
 
@@ -242,4 +272,30 @@ public class GraphicalUserInterface extends Application{
         return;
     }
 
+    public static class Test{
+        private final String name;
+        private final int cyclesRequired;
+        private final int cyclesRemaining;
+
+        private Test(String name, int req, int rem){
+            this.name = name;
+            cyclesRequired = req;
+            cyclesRemaining = rem;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getCyclesRequired() {
+            return cyclesRequired;
+        }
+
+        public int getCyclesRemaining() {
+            return cyclesRemaining;
+        }
+    }
+
 }
+
+

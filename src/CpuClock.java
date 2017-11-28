@@ -4,8 +4,8 @@ import java.util.concurrent.BlockingQueue;
 public class CpuClock extends Thread{
     private int currentProc;
     private final BlockingQueue queue;
-    private final int MAX_RUNNING_PROCS = 25;
-    private ArrayList procs = new ArrayList(MAX_RUNNING_PROCS);
+    private static final int MAX_RUNNING_PROCS = 25;
+    public static ArrayList procs = new ArrayList(MAX_RUNNING_PROCS);
     public final int ROUND_ROBIN = 0, FIFS = 1, SRTF = 2;
     protected int scheduler = ROUND_ROBIN;
 
@@ -60,6 +60,7 @@ public class CpuClock extends Thread{
     private void roundRobin() throws InterruptedException {
         final int Q = 10;//time each process gets per turn
         int turn, index = 0;
+        ProcessControlBlock proc;
 
         while(scheduler == ROUND_ROBIN){
             //wait for process
@@ -68,17 +69,17 @@ public class CpuClock extends Thread{
                 continue;
 
             turn = Q;
-
+            proc = (ProcessControlBlock)procs.get(index);
             //the processes' turn
             while(turn > 0){
-                if((int)procs.get(index) > 1) {
+                if(proc.getCyclesRemaining() > 1) {
                     //proc--;
-                    procs.set(index, (int)procs.get(index) - 1);//sub one from the remaining cycles
+                    proc.setCyclesRemaining(proc.getCyclesRemaining() - 1);//sub one from the remaining cycles
                     Thread.sleep(1);
                     turn--;
                 }
                 else {
-                    System.out.println("log: process finished.");
+                    System.out.println("log: process " + proc.getName() +" finished.");
                     procs.remove(index);
                     index--;
                     break;
