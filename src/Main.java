@@ -15,17 +15,6 @@ public class Main {
 
         Application.launch(GraphicalUserInterface.class);
 
-        MainMemory memory = new MainMemory();
-        PageTable pTable = new PageTable(4);
-        int[] dataz = {11, 22, 33, 44};
-        for (int i = 0; i < 4; i++) {
-            pTable.setFrame(i, memory.initFrame(dataz[i]));
-            pTable.getFrame(i);
-        }
-        double memData = memory.calcMemData();
-
-
-
     }
 
 }
