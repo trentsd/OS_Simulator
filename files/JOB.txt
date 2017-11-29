@@ -1,0 +1,6 @@
+LOAD a
+LOAD b
+LOAD c
+LOAD d
+LOAD e
+EXE

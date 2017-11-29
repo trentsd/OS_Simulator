@@ -40,6 +40,9 @@ public class Main {
         double memData = memory.calcMemData();
         */
 
+
+        System.exit(0);
+
     }
 
     //todo move me. I do not belong here.

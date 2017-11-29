@@ -109,6 +109,7 @@ public class CommandLine {
 
     private String doExit(){
         String str = "Exiting!";
+        //Main.shutDown();
         return str;
     }
 
