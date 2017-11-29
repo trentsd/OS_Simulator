@@ -16,6 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -158,6 +160,7 @@ public class GraphicalUserInterface extends Application{
         });
 
 
+
         //Scheduler buttons
         HBox buttons = new HBox();
 
@@ -191,6 +194,7 @@ public class GraphicalUserInterface extends Application{
         window.show();
 
 
+
         //---graph stuff---
         executor = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
@@ -200,6 +204,7 @@ public class GraphicalUserInterface extends Application{
                 return thread;
             }
         });
+        commandInput.requestFocus();
 
         AddToQueue addToQueue = new AddToQueue();
         executor.execute(addToQueue);
@@ -217,7 +222,7 @@ public class GraphicalUserInterface extends Application{
                 // add a item of random data to queues todo: make this actually pull data
                 updateObserver();
                 memDataQueue.add(Math.random());
-                Thread.sleep(500);
+                Thread.sleep(200);
                 executor.execute(this);
 
             } catch (InterruptedException ex) {
@@ -260,41 +265,22 @@ public class GraphicalUserInterface extends Application{
 
     public void updateObserver(){
         procsObserver.clear();
-        for(int i = 0; i < CpuClock.procs.size(); i++){
+        /*for(int i = 0; i < CpuClock.procs.size(); i++){
             procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
-        }
+        }*/
+
+        procsObserver.addAll(Main.clock.runningProcs);
+        procsObserver.addAll(Main.queue);
+        procsObserver.removeAll(Collections.singleton(null));
     }
 
 
-    private void closeProgram(){
+    protected void closeProgram(){
         window.close();
         System.out.println("log: GUI window closed successfully.");
         return;
     }
 
-    public static class Test{
-        private final String name;
-        private final int cyclesRequired;
-        private final int cyclesRemaining;
-
-        private Test(String name, int req, int rem){
-            this.name = name;
-            cyclesRequired = req;
-            cyclesRemaining = rem;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getCyclesRequired() {
-            return cyclesRequired;
-        }
-
-        public int getCyclesRemaining() {
-            return cyclesRemaining;
-        }
-    }
 
 }
 
