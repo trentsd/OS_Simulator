@@ -87,13 +87,14 @@ public class CommandLine {
     private String doExe(){
         String str = "EXE\n";
         try {
-            queue.put(25);
-            queue.put(1000);
+            new ProcessControlBlock(queue, 25, "one");
+            new ProcessControlBlock(queue, 1000, "two");
             Thread.sleep(400);
-            queue.put(100);
-            queue.put(50);
-            Thread.sleep(4000);
-            queue.put(1000);
+            new ProcessControlBlock(queue, 2000, "three");
+            new ProcessControlBlock(queue, 100, "four");
+            Thread.sleep(2000);
+            new ProcessControlBlock(queue, 3000, "five");
+            new ProcessControlBlock(queue, 1000, "six");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -111,5 +112,6 @@ public class CommandLine {
         //Main.shutDown();
         return str;
     }
+
 
 }
