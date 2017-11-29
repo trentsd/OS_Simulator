@@ -19,6 +19,7 @@ public class Main {
 
         Application.launch(GraphicalUserInterface.class);
 
+        /*
         MainMemory memory = new MainMemory();
         PageTable pTable = new PageTable(4);
         int[] dataz = {11, 22, 33, 44};
@@ -27,7 +28,7 @@ public class Main {
             pTable.getFrame(i);
         }
         double memData = memory.calcMemData();
-
+        */
 
 
         System.exit(0);
