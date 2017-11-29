@@ -1,5 +1,6 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -18,10 +19,7 @@ import javafx.stage.Stage;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public class GraphicalUserInterface extends Application{
 
@@ -46,6 +44,32 @@ public class GraphicalUserInterface extends Application{
     private BorderPane pane;
     private VBox infoBox = new VBox();
 
+
+    //------All this stuff is for main thread synchronization------
+    public static final CountDownLatch latch = new CountDownLatch(1);
+    public static GraphicalUserInterface gui = null;
+
+    public static GraphicalUserInterface waitForGui(){
+        try{
+            latch.await();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        return gui;
+    }
+
+    public static void setGui(GraphicalUserInterface thisGui){
+        gui = thisGui;
+        latch.countDown();
+    }
+
+    public GraphicalUserInterface(){
+        setGui(this);
+    }
+    //---------------------------------------------------------------
+
+
+
     private void init(Stage window, BorderPane pane){
         //line chart variables/setup
         this.pane = pane;
@@ -68,7 +92,7 @@ public class GraphicalUserInterface extends Application{
         };
 
         lineChart.setAnimated(false);
-        lineChart.setTitle("Resourcce Monitor");
+        lineChart.setTitle("Resource Monitor");
         lineChart.setHorizontalGridLinesVisible(true);
 
         memSeries.setName("Memory Usage");
@@ -121,7 +145,7 @@ public class GraphicalUserInterface extends Application{
         //execute the close method on clicking the exit button
         window.setOnCloseRequest(e -> {
             e.consume();
-            closeProgram();
+            Main.shutDown();
         });
 
         //initalize graph
@@ -151,6 +175,7 @@ public class GraphicalUserInterface extends Application{
 
                             //update console
                             display.appendText(output);
+
                         }
                     }).start();
 
@@ -276,12 +301,14 @@ public class GraphicalUserInterface extends Application{
 
 
     protected void closeProgram(){
-        window.close();
+        Platform.exit();
         System.out.println("log: GUI window closed successfully.");
         return;
     }
 
-
+    public void test(){
+        System.out.println("Referenced.");
+    }
 }
 
 
