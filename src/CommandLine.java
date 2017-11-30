@@ -63,7 +63,7 @@ public class CommandLine {
                 output = doExit();
                 break;
             default:
-                output = commandToken + " is not recognized as a command. Please try again.";
+                output = commandToken + " is not recognized as a command. Please try again.\n";
         }
 
         return output;
@@ -108,8 +108,8 @@ public class CommandLine {
     }
 
     private String doExit(){
-        String str = "Exiting!";
-        //Main.shutDown();
+        String str = "Exiting!\n";
+        Main.shutDown();
         return str;
     }
 
