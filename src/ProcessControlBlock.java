@@ -6,15 +6,17 @@ public class ProcessControlBlock {
     private String name;
     private int cyclesRequired;
     private int cyclesRemaining;
+    private int memRequired;
     private int pid;
-    //private PageTable ptbr;
+    private PageTable ptbr;
     private BlockingQueue queue;
 
-    public ProcessControlBlock(BlockingQueue queue, int cycles, String name){
+    public ProcessControlBlock(BlockingQueue queue, int cycles, String name, int pid, int mem){
         this.queue = queue;
         this.name = name;
         this.cyclesRequired = cycles;
-        cyclesRemaining = cycles;
+        this.cyclesRemaining = cycles;
+        this.pid = pid;
 
         try {
             queue.put(this);

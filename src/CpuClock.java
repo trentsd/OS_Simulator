@@ -9,6 +9,13 @@ public class CpuClock extends Thread{
     public final int ROUND_ROBIN = 0, FIFS = 1, SRTF = 2;
     protected int scheduler = ROUND_ROBIN;
 
+    /**
+     *Translation Lookaside Buffer.
+     * CPU checks this for any given address, if the address is not in TLB, kick address out to main memory
+     * and load it in to TLB
+     */
+    private TLB tlb;
+
     public CpuClock (BlockingQueue q){
         queue = q;
     }
