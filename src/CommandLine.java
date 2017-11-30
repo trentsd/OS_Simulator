@@ -119,11 +119,7 @@ public class CommandLine {
     }
 
     private String doExit(){
-<<<<<<< HEAD
-        String str = "Exiting!\n";
-=======
         String str = "Exiting!";
->>>>>>> origin/master
         Main.shutDown();
         return str;
     }
