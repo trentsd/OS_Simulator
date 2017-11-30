@@ -1,5 +1,6 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -16,10 +17,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.*;
 
 public class GraphicalUserInterface extends Application{
 
@@ -44,6 +44,32 @@ public class GraphicalUserInterface extends Application{
     private BorderPane pane;
     private VBox infoBox = new VBox();
 
+
+    //------All this stuff is for main thread synchronization------
+    public static final CountDownLatch latch = new CountDownLatch(1);
+    public static GraphicalUserInterface gui = null;
+
+    public static GraphicalUserInterface waitForGui(){
+        try{
+            latch.await();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        return gui;
+    }
+
+    public static void setGui(GraphicalUserInterface thisGui){
+        gui = thisGui;
+        latch.countDown();
+    }
+
+    public GraphicalUserInterface(){
+        setGui(this);
+    }
+    //---------------------------------------------------------------
+
+
+
     private void init(Stage window, BorderPane pane){
         //line chart variables/setup
         this.pane = pane;
@@ -66,7 +92,7 @@ public class GraphicalUserInterface extends Application{
         };
 
         lineChart.setAnimated(false);
-        lineChart.setTitle("Resourcce Monitor");
+        lineChart.setTitle("Resource Monitor");
         lineChart.setHorizontalGridLinesVisible(true);
 
         memSeries.setName("Memory Usage");
@@ -119,7 +145,7 @@ public class GraphicalUserInterface extends Application{
         //execute the close method on clicking the exit button
         window.setOnCloseRequest(e -> {
             e.consume();
-            closeProgram();
+            Main.shutDown();
         });
 
         //initalize graph
@@ -149,6 +175,7 @@ public class GraphicalUserInterface extends Application{
 
                             //update console
                             display.appendText(output);
+
                         }
                     }).start();
 
@@ -156,6 +183,7 @@ public class GraphicalUserInterface extends Application{
                 }
             }
         });
+
 
 
         //Scheduler buttons
@@ -191,6 +219,7 @@ public class GraphicalUserInterface extends Application{
         window.show();
 
 
+
         //---graph stuff---
         executor = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
@@ -200,6 +229,7 @@ public class GraphicalUserInterface extends Application{
                 return thread;
             }
         });
+        commandInput.requestFocus();
 
         AddToQueue addToQueue = new AddToQueue();
         executor.execute(addToQueue);
@@ -217,7 +247,7 @@ public class GraphicalUserInterface extends Application{
                 // add a item of random data to queues todo: make this actually pull data
                 updateObserver();
                 memDataQueue.add(Math.random());
-                Thread.sleep(500);
+                Thread.sleep(200);
                 executor.execute(this);
 
             } catch (InterruptedException ex) {
@@ -260,42 +290,25 @@ public class GraphicalUserInterface extends Application{
 
     public void updateObserver(){
         procsObserver.clear();
-        for(int i = 0; i < CpuClock.procs.size(); i++){
+        /*for(int i = 0; i < CpuClock.procs.size(); i++){
             procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
-        }
+        }*/
+
+        procsObserver.addAll(Main.clock.runningProcs);
+        procsObserver.addAll(Main.queue);
+        procsObserver.removeAll(Collections.singleton(null));
     }
 
 
-    private void closeProgram(){
-        window.close();
+    protected void closeProgram(){
+        Platform.exit();
         System.out.println("log: GUI window closed successfully.");
         return;
     }
 
-    public static class Test{
-        private final String name;
-        private final int cyclesRequired;
-        private final int cyclesRemaining;
-
-        private Test(String name, int req, int rem){
-            this.name = name;
-            cyclesRequired = req;
-            cyclesRemaining = rem;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getCyclesRequired() {
-            return cyclesRequired;
-        }
-
-        public int getCyclesRemaining() {
-            return cyclesRemaining;
-        }
+    public void test(){
+        System.out.println("Referenced.");
     }
-
 }
 
 
