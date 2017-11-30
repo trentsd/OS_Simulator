@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 
@@ -71,18 +70,8 @@ public class CommandLine {
     }
 
     private String doProc(){
-        ArrayList procs = new ArrayList();
-        procs.addAll(Main.clock.allProcs);
-        StringBuilder output = new StringBuilder();
-        output.append("\n");
-
-        for(int i = 0; i < procs.size(); i++){
-            ProcessControlBlock temp = (ProcessControlBlock)procs.get(i);
-            output.append(temp.getName() + " " + temp.getCyclesRemaining() +"\n");
-        }
-
-        Main.gui.displayText(output.toString());
-        return output.toString();
+        String str = "PROC\n";
+        return str;
     }
 
     private String doMem(){
@@ -92,21 +81,24 @@ public class CommandLine {
 
     private String doLoad(){
         String str = "LOAD\n";
-        new ProcessControlBlock(0, 2500, "one");
-        new ProcessControlBlock(0, 1000, "two");
-        new ProcessControlBlock(0, 2000, "three");
-        new ProcessControlBlock(0, 10000, "four");
-        new ProcessControlBlock(0, 3000, "five");
-        new ProcessControlBlock(0, 1000, "six");
-
-        Main.gui.displayText("Loaded processes");
         return str;
     }
 
     private String doExe(){
         String str = "EXE\n";
-        Main.clock.execute = 100;
-        Main.gui.displayText("Running for 100 cycles");
+        try {
+            new ProcessControlBlock(queue, 25, "one");
+            new ProcessControlBlock(queue, 1000, "two");
+            Thread.sleep(400);
+            new ProcessControlBlock(queue, 2000, "three");
+            new ProcessControlBlock(queue, 100, "four");
+            Thread.sleep(2000);
+            new ProcessControlBlock(queue, 3000, "five");
+            new ProcessControlBlock(queue, 1000, "six");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         return str;
     }
 
@@ -116,11 +108,7 @@ public class CommandLine {
     }
 
     private String doExit(){
-<<<<<<< HEAD
         String str = "Exiting!\n";
-=======
-        String str = "Exiting!";
->>>>>>> origin/master
         Main.shutDown();
         return str;
     }

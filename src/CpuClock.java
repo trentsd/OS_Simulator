@@ -2,30 +2,37 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class CpuClock extends Thread{
-    private static final int MAX_RUNNING_PROCS = 100;
-
-    private final BlockingQueue readyProcs;
+    private final BlockingQueue queue;
+    private static final int MAX_RUNNING_PROCS = 25;
     public static List runningProcs = Collections.synchronizedList(new ArrayList(MAX_RUNNING_PROCS));
-    public static List waitingProcs = Collections.synchronizedList(new ArrayList(MAX_RUNNING_PROCS));
-    public static BlockingQueue newProcs = new LinkedBlockingQueue();
-    public static List incubatingProcs = Collections.synchronizedList(new ArrayList(MAX_RUNNING_PROCS));
-    public static BlockingQueue allProcs = new LinkedBlockingQueue();
-
-    public final int ROUND_ROBIN = 0, FCFS = 1, SRTF = 2;
+    public final int ROUND_ROBIN = 0, FIFS = 1, SRTF = 2;
     protected int scheduler = ROUND_ROBIN;
     private final int IO_CHANCE = 1;
-    private boolean contProc;
-    public int execute = 0;
 
     public CpuClock (BlockingQueue q){
-        readyProcs = q;
+        queue = q;
     }
 
     @Override
     public void run() {
+
+        /*try {
+            while (true){
+                currentProc = (int)procs.get(0);
+                int total = currentProc;//todo temp
+                
+                while (currentProc > 0){
+                    currentProc--;
+                    checkForProcs();
+                    Thread.sleep(1);
+                }
+                System.out.println("log: " + total + " Process finished");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
         schedule();
     }
 
@@ -38,10 +45,10 @@ public class CpuClock extends Thread{
                 e.printStackTrace();
             }
         }
-        else if(scheduler == FCFS){
+        /*else if(scheduler == FIFS){
 
         }
-        /*else if(scheduler == SRTF){
+        else if(scheduler == SRTF){
 
         }*/
         else{
@@ -52,196 +59,112 @@ public class CpuClock extends Thread{
         }
     }
 
-    private synchronized void roundRobin() throws InterruptedException {
+    private void roundRobin() throws InterruptedException {
         final int Q = 10;//time each process gets per turn
-        ProcessControlBlock proc1 = null, proc2 = null, proc3 = null, proc4 = null;
-        int turn1 =0 , turn2 = 0, turn3 = 0, turn4 = 0;
-        execute = 0;
+        int turn, index = 0;
+        ProcessControlBlock proc1, proc2, proc3, proc4;
 
         while(scheduler == ROUND_ROBIN){
-
-            if(execute <= 0){
-                Thread.sleep(100);
+            //wait for process
+            //checkForProcs();
+            if(queue.size() == 0)
                 continue;
-            }
-            synchronized (runningProcs) {
-                //Thread One
-                if (turn1 < Q && proc1 != null) {
-                    //process is still running
-                    if (proc1.getCyclesRemaining() > 0) {
-                        //checkCommand(proc1);
-                        proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);
-                        turn1++;
-                    } else { //process is done
-                        System.out.println("log: process " + proc1.getName() + " finished.");
-                        runningProcs.remove(proc1);
-                        proc1 = (ProcessControlBlock) readyProcs.poll();
-                        runningProcs.add(proc1);
-                        readyProcs.remove(proc1);
-                        turn1 = 0;
-                    }
-                } else {//turn over
-                    if (proc1 != null) readyProcs.add(proc1);
+
+            turn = Q;
+
+            proc1 = (ProcessControlBlock)queue.poll();
+            runningProcs.add(proc1);
+            proc2 = (ProcessControlBlock)queue.poll();
+            runningProcs.add(proc2);
+            proc3 = (ProcessControlBlock)queue.poll();
+            runningProcs.add(proc3);
+            proc4 = (ProcessControlBlock)queue.poll();
+            runningProcs.add(proc4);
+            //the processes' turn
+            while(turn > 0){
+                if(proc1 == null){}
+                else if(proc1.getCyclesRemaining() > 1) {
+                    proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);//sub one from the remaining cycles
+                }
+                else {
+                    System.out.println("log: process " + proc1.getName() +" finished.");
                     runningProcs.remove(proc1);
-                    proc1 = (ProcessControlBlock) readyProcs.poll();
-                    runningProcs.add(proc1);
-                    readyProcs.remove(proc1);
-                    turn1 = 0;
+                    index--;
+                    proc1 = null;
                 }
 
-                //Thread Two
-                if (turn2 < Q && proc2 != null) {
-                    //process is still running
-                    if (proc2.getCyclesRemaining() > 0) {
-                        //checkCommand(proc2);
-                        proc2.setCyclesRemaining(proc2.getCyclesRemaining() - 1);
-                        turn2++;
-                    } else { //process is done
-                        System.out.println("log: process " + proc2.getName() + " finished.");
-                        runningProcs.remove(proc2);
-                        proc2 = (ProcessControlBlock) readyProcs.poll();
-                        runningProcs.add(proc2);
-                        readyProcs.remove(proc2);
-                        turn2 = 0;
-                    }
-                } else {//turn over
-                    if (proc2 != null) readyProcs.add(proc2);
+                if(proc2 == null){}
+                else if(proc2.getCyclesRemaining() > 1) {
+                    proc2.setCyclesRemaining(proc2.getCyclesRemaining() - 1);//sub one from the remaining cycles
+                }
+                else {
+                    System.out.println("log: process " + proc2.getName() +" finished.");
                     runningProcs.remove(proc2);
-                    proc2 = (ProcessControlBlock) readyProcs.poll();
-                    runningProcs.add(proc2);
-                    readyProcs.remove(proc2);
-                    turn2 = 0;
+                    index--;
+                    proc2 = null;
                 }
 
-                //Thread Three
-                if (turn3 < Q && proc3 != null) {
-                    //process is still running
-                    if (proc3.getCyclesRemaining() > 0) {
-                        //checkCommand(proc3);
-                        proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);
-                        turn3++;
-                    } else { //process is done
-                        System.out.println("log: process " + proc3.getName() + " finished.");
-                        runningProcs.remove(proc3);
-                        proc3 = (ProcessControlBlock) readyProcs.poll();
-                        runningProcs.add(proc3);
-                        readyProcs.remove(proc3);
-                        turn3 = 0;
-                    }
-                } else {//turn over
-                    if (proc3 != null) readyProcs.add(proc3);
+                if(proc3 == null){}
+                else if(proc3.getCyclesRemaining() > 1) {
+                    proc3.setCyclesRemaining(proc3.getCyclesRemaining() - 1);//sub one from the remaining cycles
+                }
+                else {
+                    System.out.println("log: process " + proc3.getName() +" finished.");
                     runningProcs.remove(proc3);
-                    proc3 = (ProcessControlBlock) readyProcs.poll();
-                    runningProcs.add(proc3);
-                    readyProcs.remove(proc3);
-                    turn3 = 0;
+                    index--;
+                    proc3 = null;
                 }
 
-                //Thread Four
-                if (turn4 < Q && proc4 != null) {
-                    //process is still running
-                    if (proc4.getCyclesRemaining() > 0) {
-                        //checkCommand(proc4);
-                        proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);
-                        turn4++;
-                    } else { //process is done
-                        System.out.println("log: process " + proc4.getName() + " finished.");
-                        runningProcs.remove(proc4);
-                        proc4 = (ProcessControlBlock) readyProcs.poll();
-                        runningProcs.add(proc4);
-                        readyProcs.remove(proc4);
-                        turn4 = 0;
-                    }
-                } else {//turn over
-                    if (proc4 != null) readyProcs.add(proc4);
+                if(proc4 == null){}
+                else if(proc4.getCyclesRemaining() > 1) {
+                    proc4.setCyclesRemaining(proc4.getCyclesRemaining() - 1);//sub one from the remaining cycles
+                }
+                else {
+                    System.out.println("log: process " + proc4.getName() +" finished.");
                     runningProcs.remove(proc4);
-                    proc4 = (ProcessControlBlock) readyProcs.poll();
-                    runningProcs.add(proc4);
-                    readyProcs.remove(proc4);
-                    turn4 = 0;
+                    index--;
+                    proc4 = null;
                 }
+
+
+                Thread.sleep(1);
+                turn--;
+
+            }
+            if(proc1 != null) {
+                queue.put(proc1);
+                runningProcs.remove(proc1);
+            }
+            if(proc2 != null) {
+                queue.put(proc2);
+                runningProcs.remove(proc2);
+            }
+            if(proc3 != null) {
+                queue.put(proc3);
+                runningProcs.remove(proc3);
+            }
+            if(proc4 != null) {
+                queue.put(proc4);
+                runningProcs.remove(proc4);
             }
 
-
-            incubateProcs();
-
-            //randomIO();
-            allProcs.clear();
-
-            try {
-                allProcs.addAll(runningProcs);
-            }catch(NullPointerException e){
-                //System.out.println(e.toString());
-            }
-            allProcs.addAll(waitingProcs);
-            allProcs.addAll(newProcs);
-            allProcs.addAll(readyProcs);
-            allProcs.remove(Collections.singleton(null));
-            /*if(allProcs.size() != 0)
-                Main.gui.updateObserver();*/
-
-
-            execute--;
-
+            randomIO();
         }
 
         schedule();
 
     }
 
-    private void firstCome() throws InterruptedException {
-        execute = 0;
-        ProcessControlBlock proc;
-
-        while (scheduler == FCFS){
-            incubateProcs();
-
-            if(execute <= 0){
-                Thread.sleep(500);
-            }
-            while(execute <= 0) {
-                proc = (ProcessControlBlock) readyProcs.poll();
-                runningProcs.add(proc);
-                readyProcs.remove(proc);
-                proc.state = States.RUN;
-                while (proc.getCyclesRemaining() > 0) {
-                    //checkCommand
-                    proc.setCyclesRemaining(proc.getCyclesRemaining() - 1);
-                }
-                proc.state = States.EXIT;
-                runningProcs.remove(proc);
-                System.out.println("log: " + proc.getName() + " finished.");
-
-                //randomIO();
-
-                execute --;
-            }
-
-        }
-        schedule();
-    }
-
-    private void incubateProcs(){
-        for(int i = 0; i < incubatingProcs.size(); i++){
-            //(ProcessControlBlock)(incubatingProcs.get(i)).incubateTime -= 1;
-            // I DONT KNOW WHY THIS DOESNT WORK, ITS BEING CAST SO I HAD TO USE THIS STUPID TEMP VAR
-            ProcessControlBlock temp = (ProcessControlBlock)incubatingProcs.get(i);
-            if(temp.incubate()){
-                temp.state = States.NEW;
-                try {
-                    readyProcs.put(temp);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                incubatingProcs.remove(temp);
-            }
-        }
-    }
+    /*private void checkForProcs(){
+        if(queue.peek() != null)
+            procs.add(queue.poll());
+        return;
+    }*/
 
     private void randomIO(){
         int cycles;
         if(Math.random()*100 < IO_CHANCE) {
-            cycles = 25 + (int)(Math.random() * ((50 - 25) + 1));
+            cycles = 25 + (int) (Math.random() * ((50 - 25) + 1));
             System.out.println("log: IO occurred taking " + cycles + " cycles.");
             while (cycles != 0){
                 cycles--;
@@ -250,36 +173,6 @@ public class CpuClock extends Thread{
         }
         else
             return;
-    }
-
-    private void checkCommand(ProcessControlBlock proc){
-        switch (proc.getNextCommand()){
-            case Commands.CALCULATE:
-                proc.setCyclesRemaining(proc.getCyclesRemaining() - 1);
-                contProc = true;
-                break;
-            case Commands.IO:
-                proc.state = States.WAIT;
-                proc.blockTime = 25 + (int)(Math.random() * ((50 - 25) + 1));
-                waitingProcs.add(proc);
-                runningProcs.remove(proc);
-                contProc = false;
-                break;
-            case Commands.YIELD:
-                try {
-                    readyProcs.put(proc);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                runningProcs.remove(proc);
-                contProc = false;
-                break;
-            case Commands.OUT:
-                break;
-            default:
-                System.out.println("log: Command queue empty.");
-                break;
-        }
     }
 
 
