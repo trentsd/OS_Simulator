@@ -24,13 +24,6 @@ public class ProcessControlBlock {
         Main.clock.incubatingProcs.add(this);
     }
 
-    /*public State getState() {
-        return state;
-    }*/
-
-    /*public void setState(State state) {
-        this.state = state;
-    }*/
 
     public String getName() {
         return name;
