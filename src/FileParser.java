@@ -4,7 +4,7 @@ import java.util.Scanner;
 
 public class FileParser {
 
-    public void parse(String filename){
+    public static void parse(String filename){
         File f = new File(filename);
 
         try (BufferedReader r = new BufferedReader(new FileReader(f))) {

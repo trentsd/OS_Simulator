@@ -16,7 +16,7 @@ public class CommandLine {
     private Scanner cli;
     private final byte STATUS_NORMAL = 0;
     private final BlockingQueue queue;
-    private final String loadAppend = ".txt";
+    private final String LOAD_APPEND = ".txt";
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
@@ -53,7 +53,8 @@ public class CommandLine {
                 output = doMem();
                 break;
             case "LOAD":
-                output = doLoad();
+                String filename = cli.next() + LOAD_APPEND;
+                output = doLoad(filename);
                 break;
             case "EXE":
                 output = doExe();
@@ -91,9 +92,9 @@ public class CommandLine {
         return str;
     }
 
-    private String doLoad(){
+    private String doLoad(String filename){
         String str = "LOAD\n";
-        new ProcessControlBlock(0, 25, "a");
+        /*new ProcessControlBlock(0, 25, "a");
         new ProcessControlBlock(0, 3, "b");
         new ProcessControlBlock(0, 20, "c");
         new ProcessControlBlock(0, 2500, "one");
@@ -102,7 +103,8 @@ public class CommandLine {
         new ProcessControlBlock(0, 10000, "four");
         new ProcessControlBlock(0, 3000, "five");
         new ProcessControlBlock(0, 1000, "six");
-
+*/
+        FileParser.parse(filename);
         Main.gui.displayText("Loaded processes");
         return str;
     }
