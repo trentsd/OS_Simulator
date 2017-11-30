@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class FileParser {
@@ -65,7 +66,15 @@ public class FileParser {
                     case "I/O":
                         break;
                     case "OUT":
-                        
+                        in.useDelimiter("\"");
+                        try {
+                            String outText = in.next();
+                            Main.gui.displayText(outText);
+                        } catch(NoSuchElementException e){
+                            String outText = "Malformed OUT command reached. Please use correct syntax.";
+                            Main.gui.displayText(outText);
+                        }
+                        break;
                 }
             }
         } catch(IOException e){
