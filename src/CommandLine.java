@@ -15,6 +15,7 @@ public class CommandLine {
     private Scanner cli;
     private final byte STATUS_NORMAL = 0;
     private final BlockingQueue queue;
+    private final String loadAppend = ".txt";
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
