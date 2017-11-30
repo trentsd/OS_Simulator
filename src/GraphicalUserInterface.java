@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.concurrent.*;
 
@@ -38,11 +39,12 @@ public class GraphicalUserInterface extends Application{
     private TableColumn procCol;
     private TableColumn totalCol;
     private TableColumn remainingCol;
-    private ObservableList<ProcessControlBlock> procsObserver;
+    public ObservableList<ProcessControlBlock> procsObserver;
 
 
     private BorderPane pane;
     private VBox infoBox = new VBox();
+    private TextArea display;
 
 
     //------All this stuff is for main thread synchronization------
@@ -153,7 +155,7 @@ public class GraphicalUserInterface extends Application{
 
         VBox vertBox = new VBox();
 
-        TextArea display = new TextArea();
+        display = new TextArea();
         display.setMaxWidth(400);
         display.setWrapText(true);
         display.setEditable(false);
@@ -171,10 +173,7 @@ public class GraphicalUserInterface extends Application{
                     new Thread(new Runnable(){
                         @Override
                         public void run() {
-                            String output = cli.interpretInput(input);
-
-                            //update console
-                            display.appendText(output);
+                            cli.interpretInput(input);
 
                         }
                     }).start();
@@ -195,9 +194,9 @@ public class GraphicalUserInterface extends Application{
             Main.selectScheduler(0);
         });
 
-        Button firstInButton = new Button("FiFs");
+        Button firstInButton = new Button("FcFs");
         firstInButton.setOnAction(e -> {
-            System.out.println("log: FiFs selected.");
+            System.out.println("log: FcFs selected.");
             Main.selectScheduler(1);
         });
 
@@ -294,9 +293,13 @@ public class GraphicalUserInterface extends Application{
             procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
         }*/
 
-        procsObserver.addAll(Main.clock.runningProcs);
-        procsObserver.addAll(Main.queue);
-        procsObserver.removeAll(Collections.singleton(null));
+        try{
+            procsObserver.addAll(Main.clock.allProcs);
+        }catch (Exception e){
+            System.out.println(e.toString());
+        }
+
+
     }
 
 
@@ -306,8 +309,8 @@ public class GraphicalUserInterface extends Application{
         return;
     }
 
-    public void test(){
-        System.out.println("Referenced.");
+    public void displayText(String output){
+        display.appendText("\n" + output);
     }
 }
 
