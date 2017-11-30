@@ -39,7 +39,11 @@ public class CpuClock extends Thread{
             }
         }
         else if(scheduler == FCFS){
-
+            try {
+                firstCome();
+            }catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         /*else if(scheduler == SRTF){
 
@@ -166,20 +170,8 @@ public class CpuClock extends Thread{
             incubateProcs();
 
             //randomIO();
-            allProcs.clear();
 
-            try {
-                allProcs.addAll(runningProcs);
-            }catch(NullPointerException e){
-                //System.out.println(e.toString());
-            }
-            allProcs.addAll(waitingProcs);
-            allProcs.addAll(newProcs);
-            allProcs.addAll(readyProcs);
-            allProcs.remove(Collections.singleton(null));
-            /*if(allProcs.size() != 0)
-                Main.gui.updateObserver();*/
-
+            updateList();
 
             execute--;
 
@@ -193,29 +185,33 @@ public class CpuClock extends Thread{
         execute = 0;
         ProcessControlBlock proc;
 
+        while(execute <= 0){
+            Thread.sleep(500);
+        }
+
+        proc = (ProcessControlBlock) readyProcs.poll();
+        runningProcs.add(proc);
+        proc.state = States.RUN;
+
         while (scheduler == FCFS){
             incubateProcs();
 
-            if(execute <= 0){
-                Thread.sleep(500);
-            }
-            while(execute <= 0) {
-                proc = (ProcessControlBlock) readyProcs.poll();
-                runningProcs.add(proc);
-                readyProcs.remove(proc);
-                proc.state = States.RUN;
-                while (proc.getCyclesRemaining() > 0) {
+            while(execute > 0) {
+
+                if (proc.getCyclesRemaining() > 0) {
                     //checkCommand
                     proc.setCyclesRemaining(proc.getCyclesRemaining() - 1);
+                    execute --;
                 }
-                proc.state = States.EXIT;
-                runningProcs.remove(proc);
-                System.out.println("log: " + proc.getName() + " finished.");
+                else {
+                    proc.state = States.EXIT;
+                    runningProcs.remove(proc);
+                    System.out.println("log: " + proc.getName() + " finished.");
+                    updateList();
+                }
 
-                //randomIO();
-
-                execute --;
             }
+            updateList();
 
         }
         schedule();
@@ -236,6 +232,20 @@ public class CpuClock extends Thread{
                 incubatingProcs.remove(temp);
             }
         }
+    }
+
+    private void updateList(){
+        allProcs.clear();
+
+        try {
+            allProcs.addAll(runningProcs);
+        }catch(NullPointerException e){
+            //System.out.println(e.toString());
+        }
+        allProcs.addAll(waitingProcs);
+        allProcs.addAll(newProcs);
+        allProcs.addAll(readyProcs);
+        allProcs.remove(Collections.singleton(null));
     }
 
     private void randomIO(){
