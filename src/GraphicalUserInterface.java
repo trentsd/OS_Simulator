@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.concurrent.*;
 
@@ -38,7 +39,7 @@ public class GraphicalUserInterface extends Application{
     private TableColumn procCol;
     private TableColumn totalCol;
     private TableColumn remainingCol;
-    private ObservableList<ProcessControlBlock> procsObserver;
+    public ObservableList<ProcessControlBlock> procsObserver;
 
 
     private BorderPane pane;
@@ -294,9 +295,13 @@ public class GraphicalUserInterface extends Application{
             procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
         }*/
 
-        procsObserver.addAll(Main.clock.runningProcs);
-        procsObserver.addAll(Main.queue);
-        procsObserver.removeAll(Collections.singleton(null));
+        try{
+            procsObserver.addAll(Main.clock.allProcs);
+        }catch (Exception e){
+            System.out.println(e.toString());
+        }
+
+
     }
 
 
