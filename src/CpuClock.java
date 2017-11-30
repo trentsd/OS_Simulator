@@ -14,7 +14,7 @@ public class CpuClock extends Thread{
     public static List incubatingProcs = Collections.synchronizedList(new ArrayList(MAX_RUNNING_PROCS));
     public static BlockingQueue allProcs = new LinkedBlockingQueue();
 
-    public final int ROUND_ROBIN = 0, FIFS = 1, SRTF = 2;
+    public final int ROUND_ROBIN = 0, FCFS = 1, SRTF = 2;
     protected int scheduler = ROUND_ROBIN;
     private final int IO_CHANCE = 1;
     private boolean contProc;
@@ -38,10 +38,10 @@ public class CpuClock extends Thread{
                 e.printStackTrace();
             }
         }
-        /*else if(scheduler == FIFS){
+        else if(scheduler == FCFS){
 
         }
-        else if(scheduler == SRTF){
+        /*else if(scheduler == SRTF){
 
         }*/
         else{
@@ -54,74 +54,12 @@ public class CpuClock extends Thread{
 
     private synchronized void roundRobin() throws InterruptedException {
         final int Q = 10;//time each process gets per turn
-        int turn;
         ProcessControlBlock proc1 = null, proc2 = null, proc3 = null, proc4 = null;
         int turn1 =0 , turn2 = 0, turn3 = 0, turn4 = 0;
+        execute = 0;
 
         while(scheduler == ROUND_ROBIN){
 
-            /*if(readyProcs.size() == 0)
-                continue;
-
-            turn = Q;
-
-            proc1 = (ProcessControlBlock)readyProcs.poll();
-            runningProcs.add(proc1);
-            proc2 = (ProcessControlBlock)readyProcs.poll();
-            runningProcs.add(proc2);
-            proc3 = (ProcessControlBlock)readyProcs.poll();
-            runningProcs.add(proc3);
-            proc4 = (ProcessControlBlock)readyProcs.poll();
-            runningProcs.add(proc4);
-            //the processes' turn
-            while(turn > 0){
-                if(proc1 == null){}
-                else if(proc1.getCyclesRemaining() > 1) {
-                    //proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);//sub one from the remaining cycles
-                    checkCommand(proc1);
-                }
-                else {
-                    checkCommand(proc1);
-                    System.out.println("log: process " + proc1.getName() +" finished.");
-                    runningProcs.remove(proc1);
-                    proc1 = null;
-                }
-
-                if(proc2 == null){}
-                else if(proc2.getCyclesRemaining() > 1) {
-                    proc2.setCyclesRemaining(proc2.getCyclesRemaining() - 1);//sub one from the remaining cycles
-                }
-                else {
-                    System.out.println("log: process " + proc2.getName() +" finished.");
-                    runningProcs.remove(proc2);
-                    proc2 = null;
-                }
-
-                if(proc3 == null){}
-                else if(proc3.getCyclesRemaining() > 1) {
-                    proc3.setCyclesRemaining(proc3.getCyclesRemaining() - 1);//sub one from the remaining cycles
-                }
-                else {
-                    System.out.println("log: process " + proc3.getName() +" finished.");
-                    runningProcs.remove(proc3);
-                    proc3 = null;
-                }
-
-                if(proc4 == null){}
-                else if(proc4.getCyclesRemaining() > 1) {
-                    proc4.setCyclesRemaining(proc4.getCyclesRemaining() - 1);//sub one from the remaining cycles
-                }
-                else {
-                    System.out.println("log: process " + proc4.getName() +" finished.");
-                    runningProcs.remove(proc4);
-                    proc4 = null;
-                }
-
-
-                Thread.sleep(1);
-                turn--;
-
-            }*/
             if(execute <= 0){
                 Thread.sleep(100);
                 continue;
@@ -225,25 +163,7 @@ public class CpuClock extends Thread{
             }
 
 
-            /*
-            for(int i = 0; i < runningProcs.size(); i++){
-                if(runningProcs.get(i) != null){
-                    readyProcs.put(runningProcs.get(i));
-                    runningProcs.remove(i);
-                }else
-                    runningProcs.remove(i);
-            }*/
-
-            for(int i = 0; i < incubatingProcs.size(); i++){
-                //(ProcessControlBlock)(incubatingProcs.get(i)).incubateTime -= 1;
-                // I DONT KNOW WHY THIS DOESNT WORK, ITS BEING CAST SO I HAD TO USE THIS STUPID TEMP VAR
-                ProcessControlBlock temp = (ProcessControlBlock)incubatingProcs.get(i);
-                if(temp.incubate()){
-                    temp.state = States.NEW;
-                    readyProcs.put(temp);
-                    incubatingProcs.remove(temp);
-                }
-            }
+            incubateProcs();
 
             //randomIO();
             allProcs.clear();
@@ -267,6 +187,55 @@ public class CpuClock extends Thread{
 
         schedule();
 
+    }
+
+    private void firstCome() throws InterruptedException {
+        execute = 0;
+        ProcessControlBlock proc;
+
+        while (scheduler == FCFS){
+            incubateProcs();
+
+            if(execute <= 0){
+                Thread.sleep(500);
+            }
+            while(execute <= 0) {
+                proc = (ProcessControlBlock) readyProcs.poll();
+                runningProcs.add(proc);
+                readyProcs.remove(proc);
+                proc.state = States.RUN;
+                while (proc.getCyclesRemaining() > 0) {
+                    //checkCommand
+                    proc.setCyclesRemaining(proc.getCyclesRemaining() - 1);
+                }
+                proc.state = States.EXIT;
+                runningProcs.remove(proc);
+                System.out.println("log: " + proc.getName() + " finished.");
+
+                //randomIO();
+
+                execute --;
+            }
+
+        }
+        schedule();
+    }
+
+    private void incubateProcs(){
+        for(int i = 0; i < incubatingProcs.size(); i++){
+            //(ProcessControlBlock)(incubatingProcs.get(i)).incubateTime -= 1;
+            // I DONT KNOW WHY THIS DOESNT WORK, ITS BEING CAST SO I HAD TO USE THIS STUPID TEMP VAR
+            ProcessControlBlock temp = (ProcessControlBlock)incubatingProcs.get(i);
+            if(temp.incubate()){
+                temp.state = States.NEW;
+                try {
+                    readyProcs.put(temp);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                incubatingProcs.remove(temp);
+            }
+        }
     }
 
     private void randomIO(){

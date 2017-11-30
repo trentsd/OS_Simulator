@@ -71,15 +71,17 @@ public class CommandLine {
     }
 
     private String doProc(){
-        String str = "PROC\n";
         ArrayList procs = new ArrayList();
         procs.addAll(Main.clock.allProcs);
         StringBuilder output = new StringBuilder();
+        output.append("\n");
 
         for(int i = 0; i < procs.size(); i++){
             ProcessControlBlock temp = (ProcessControlBlock)procs.get(i);
             output.append(temp.getName() + " " + temp.getCyclesRemaining() +"\n");
         }
+
+        Main.gui.displayText(output.toString());
         return output.toString();
     }
 
@@ -96,13 +98,15 @@ public class CommandLine {
         new ProcessControlBlock(0, 10000, "four");
         new ProcessControlBlock(0, 3000, "five");
         new ProcessControlBlock(0, 1000, "six");
+
+        Main.gui.displayText("Loaded processes");
         return str;
     }
 
     private String doExe(){
         String str = "EXE\n";
         Main.clock.execute = 100;
-
+        Main.gui.displayText("Running for 100 cycles");
         return str;
     }
 
