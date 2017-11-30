@@ -92,6 +92,9 @@ public class CommandLine {
 
     private String doLoad(){
         String str = "LOAD\n";
+        new ProcessControlBlock(0, 25, "a");
+        new ProcessControlBlock(0, 3, "b");
+        new ProcessControlBlock(0, 20, "c");
         new ProcessControlBlock(0, 2500, "one");
         new ProcessControlBlock(0, 1000, "two");
         new ProcessControlBlock(0, 2000, "three");
