@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 
@@ -71,7 +72,15 @@ public class CommandLine {
 
     private String doProc(){
         String str = "PROC\n";
-        return str;
+        ArrayList procs = new ArrayList();
+        procs.addAll(Main.clock.allProcs);
+        StringBuilder output = new StringBuilder();
+
+        for(int i = 0; i < procs.size(); i++){
+            ProcessControlBlock temp = (ProcessControlBlock)procs.get(i);
+            output.append(temp.getName() + " " + temp.getCyclesRemaining() +"\n");
+        }
+        return output.toString();
     }
 
     private String doMem(){
@@ -81,23 +90,18 @@ public class CommandLine {
 
     private String doLoad(){
         String str = "LOAD\n";
+        new ProcessControlBlock(0, 2500, "one");
+        new ProcessControlBlock(0, 1000, "two");
+        new ProcessControlBlock(0, 2000, "three");
+        new ProcessControlBlock(0, 10000, "four");
+        new ProcessControlBlock(0, 3000, "five");
+        new ProcessControlBlock(0, 1000, "six");
         return str;
     }
 
     private String doExe(){
         String str = "EXE\n";
-        try {
-            new ProcessControlBlock(0, 25, "one");
-            new ProcessControlBlock(0, 1000, "two");
-            Thread.sleep(400);
-            new ProcessControlBlock(0, 2000, "three");
-            new ProcessControlBlock(0, 100, "four");
-            Thread.sleep(2000);
-            new ProcessControlBlock(0, 3000, "five");
-            new ProcessControlBlock(0, 1000, "six");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        Main.clock.execute = 100;
 
         return str;
     }
