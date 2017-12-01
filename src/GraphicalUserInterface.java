@@ -39,6 +39,7 @@ public class GraphicalUserInterface extends Application{
     private TableColumn procCol;
     private TableColumn totalCol;
     private TableColumn remainingCol;
+    private TableColumn stateCol;
     public ObservableList<ProcessControlBlock> procsObserver;
 
 
@@ -138,8 +139,14 @@ public class GraphicalUserInterface extends Application{
                 new PropertyValueFactory<>("cyclesRemaining")
         );
 
+        stateCol = new TableColumn("Status");
+        stateCol.setPrefWidth(80);
+        stateCol.setCellValueFactory(
+                new PropertyValueFactory<>("state")
+        );
+
         table.setItems(procsObserver);
-        table.getColumns().addAll(procCol, totalCol, remainingCol);
+        table.getColumns().addAll(procCol, totalCol, remainingCol, stateCol);
 
         infoBox.getChildren().add(table);
         mainPane.setRight(infoBox);

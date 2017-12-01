@@ -11,6 +11,7 @@ public class ProcessControlBlock {
     public int incubateTime;
     public int state;
     public int parentId = -1;
+    public int reqMem; //in KB
 
     private LinkedList commandQueue = new LinkedList();
 
@@ -53,6 +54,10 @@ public class ProcessControlBlock {
         return pid;
     }
 
+    public int getState() {
+        return state;
+    }
+
     public void setPid(int pid) {
         this.pid = pid;
     }
@@ -73,6 +78,20 @@ public class ProcessControlBlock {
         incubateTime--;
         if(incubateTime <= 0) return true;
         else return false;
+    }
+
+    public void spawn(){
+        Main.clock.incubatingProcs.remove(this);
+        Main.clock.newProcs.add(this);//spawn proc into new queue
+        state = States.NEW;
+        //request mem
+        Main.clock.newProcs.remove(this);//move proc into the ready queue once it has memory allocated
+        try {
+            Main.queue.put(this);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        state = States.READY;
     }
 }
 

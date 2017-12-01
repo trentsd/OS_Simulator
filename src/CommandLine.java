@@ -94,7 +94,7 @@ public class CommandLine {
         String str = "LOAD\n";
         new ProcessControlBlock(0, 25, "a");
         new ProcessControlBlock(0, 3, "b");
-        new ProcessControlBlock(0, 20, "c");
+        new ProcessControlBlock(10, 20, "c");
         new ProcessControlBlock(0, 2500, "one");
         new ProcessControlBlock(0, 1000, "two");
         new ProcessControlBlock(0, 2000, "three");
@@ -108,8 +108,8 @@ public class CommandLine {
 
     private String doExe(){
         String str = "EXE\n";
-        Main.clock.execute = 100;
-        Main.gui.displayText("Running for 100 cycles");
+        Main.clock.execute = 10;
+        Main.gui.displayText("Running for 10 cycles");
         return str;
     }
 

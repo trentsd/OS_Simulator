@@ -68,6 +68,9 @@ public class CpuClock extends Thread{
                 Thread.sleep(100);
                 continue;
             }
+
+            incubateProcs();
+
             synchronized (runningProcs) {
                 //Thread One
                 if (turn1 < Q && proc1 != null) {
@@ -79,17 +82,23 @@ public class CpuClock extends Thread{
                     } else { //process is done
                         System.out.println("log: process " + proc1.getName() + " finished.");
                         runningProcs.remove(proc1);
+                        proc1.state = States.EXIT;
                         proc1 = (ProcessControlBlock) readyProcs.poll();
                         runningProcs.add(proc1);
                         readyProcs.remove(proc1);
+                        proc1.state = States.RUN;
                         turn1 = 0;
                     }
                 } else {//turn over
-                    if (proc1 != null) readyProcs.add(proc1);
-                    runningProcs.remove(proc1);
+                    if (proc1 != null) {
+                        readyProcs.add(proc1);
+                        runningProcs.remove(proc1);
+                        proc1.state = States.READY;
+                    }
                     proc1 = (ProcessControlBlock) readyProcs.poll();
                     runningProcs.add(proc1);
                     readyProcs.remove(proc1);
+                    proc1.state = States.RUN;
                     turn1 = 0;
                 }
 
@@ -103,17 +112,23 @@ public class CpuClock extends Thread{
                     } else { //process is done
                         System.out.println("log: process " + proc2.getName() + " finished.");
                         runningProcs.remove(proc2);
+                        proc2.state = States.EXIT;
                         proc2 = (ProcessControlBlock) readyProcs.poll();
                         runningProcs.add(proc2);
                         readyProcs.remove(proc2);
+                        proc2.state = States.RUN;
                         turn2 = 0;
                     }
                 } else {//turn over
-                    if (proc2 != null) readyProcs.add(proc2);
-                    runningProcs.remove(proc2);
+                    if (proc2 != null) {
+                        readyProcs.add(proc2);
+                        runningProcs.remove(proc2);
+                        proc2.state = States.READY;
+                    }
                     proc2 = (ProcessControlBlock) readyProcs.poll();
                     runningProcs.add(proc2);
                     readyProcs.remove(proc2);
+                    proc2.state = States.RUN;
                     turn2 = 0;
                 }
 
@@ -122,22 +137,28 @@ public class CpuClock extends Thread{
                     //process is still running
                     if (proc3.getCyclesRemaining() > 0) {
                         //checkCommand(proc3);
-                        proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);
+                        proc3.setCyclesRemaining(proc3.getCyclesRemaining() - 1);
                         turn3++;
                     } else { //process is done
                         System.out.println("log: process " + proc3.getName() + " finished.");
                         runningProcs.remove(proc3);
+                        proc3.state = States.EXIT;
                         proc3 = (ProcessControlBlock) readyProcs.poll();
                         runningProcs.add(proc3);
                         readyProcs.remove(proc3);
+                        proc3.state = States.RUN;
                         turn3 = 0;
                     }
                 } else {//turn over
-                    if (proc3 != null) readyProcs.add(proc3);
-                    runningProcs.remove(proc3);
+                    if (proc3 != null) {
+                        readyProcs.add(proc3);
+                        runningProcs.remove(proc3);
+                        proc3.state = States.READY;
+                    }
                     proc3 = (ProcessControlBlock) readyProcs.poll();
                     runningProcs.add(proc3);
                     readyProcs.remove(proc3);
+                    proc3.state = States.RUN;
                     turn3 = 0;
                 }
 
@@ -146,28 +167,32 @@ public class CpuClock extends Thread{
                     //process is still running
                     if (proc4.getCyclesRemaining() > 0) {
                         //checkCommand(proc4);
-                        proc1.setCyclesRemaining(proc1.getCyclesRemaining() - 1);
+                        proc4.setCyclesRemaining(proc4.getCyclesRemaining() - 1);
                         turn4++;
                     } else { //process is done
                         System.out.println("log: process " + proc4.getName() + " finished.");
                         runningProcs.remove(proc4);
+                        proc4.state = States.EXIT;
                         proc4 = (ProcessControlBlock) readyProcs.poll();
                         runningProcs.add(proc4);
                         readyProcs.remove(proc4);
+                        proc4.state = States.RUN;
                         turn4 = 0;
                     }
                 } else {//turn over
-                    if (proc4 != null) readyProcs.add(proc4);
-                    runningProcs.remove(proc4);
+                    if (proc4 != null) {
+                        readyProcs.add(proc4);
+                        runningProcs.remove(proc4);
+                        proc4.state = States.READY;
+                    }
                     proc4 = (ProcessControlBlock) readyProcs.poll();
                     runningProcs.add(proc4);
                     readyProcs.remove(proc4);
+                    proc4.state = States.RUN;
                     turn4 = 0;
                 }
             }
 
-
-            incubateProcs();
 
             //randomIO();
 
@@ -188,15 +213,27 @@ public class CpuClock extends Thread{
         while(execute <= 0){
             Thread.sleep(500);
         }
-
+        incubateProcs();
         proc = (ProcessControlBlock) readyProcs.poll();
         runningProcs.add(proc);
         proc.state = States.RUN;
 
         while (scheduler == FCFS){
-            incubateProcs();
 
             while(execute > 0) {
+                incubateProcs();
+
+                if(proc == null){
+                    execute--;
+                    try {
+                        proc = (ProcessControlBlock) readyProcs.poll();
+                        runningProcs.add(proc);
+                        proc.state = States.RUN;
+                    }catch (NullPointerException e){
+                        continue;
+                    }
+
+                }
 
                 if (proc.getCyclesRemaining() > 0) {
                     //checkCommand
@@ -207,10 +244,21 @@ public class CpuClock extends Thread{
                     proc.state = States.EXIT;
                     runningProcs.remove(proc);
                     System.out.println("log: " + proc.getName() + " finished.");
+
+                    proc = (ProcessControlBlock) readyProcs.poll();
+                    if(proc == null){
+                        execute = 0;
+                        break;
+                    }
+                    runningProcs.add(proc);
+                    proc.state = States.RUN;
+
                     updateList();
                 }
 
             }
+            Thread.sleep(2);//prevent high cpu usage
+
             updateList();
 
         }
@@ -223,13 +271,7 @@ public class CpuClock extends Thread{
             // I DONT KNOW WHY THIS DOESNT WORK, ITS BEING CAST SO I HAD TO USE THIS STUPID TEMP VAR
             ProcessControlBlock temp = (ProcessControlBlock)incubatingProcs.get(i);
             if(temp.incubate()){
-                temp.state = States.NEW;
-                try {
-                    readyProcs.put(temp);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                incubatingProcs.remove(temp);
+                temp.spawn();
             }
         }
     }
