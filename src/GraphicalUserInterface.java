@@ -46,7 +46,7 @@ public class GraphicalUserInterface extends Application{
     private BorderPane pane;
     private VBox infoBox = new VBox();
     private TextArea display;
-
+    private TextField filePathField;
 
     //------All this stuff is for main thread synchronization------
     public static final CountDownLatch latch = new CountDownLatch(1);
@@ -149,6 +149,10 @@ public class GraphicalUserInterface extends Application{
         table.getColumns().addAll(procCol, totalCol, remainingCol, stateCol);
 
         infoBox.getChildren().add(table);
+
+        Label stateKey = new Label("NEW = 0, READY = 1, RUN = 2, WAIT = 3, EXIT = 4");
+        infoBox.getChildren().add(stateKey);
+
         mainPane.setRight(infoBox);
 
         //execute the close method on clicking the exit button
@@ -164,6 +168,7 @@ public class GraphicalUserInterface extends Application{
 
         display = new TextArea();
         display.setMaxWidth(400);
+        display.setMinHeight(500);
         display.setWrapText(true);
         display.setEditable(false);
 
@@ -215,12 +220,14 @@ public class GraphicalUserInterface extends Application{
 
         buttons.getChildren().addAll(roundRobinButton, firstInButton, shortestButton);
 
+        filePathField = new TextField("default/file/path");
 
-        vertBox.getChildren().addAll(display, commandInput, buttons);
+
+        vertBox.getChildren().addAll(display, commandInput, buttons, filePathField);
 
         mainPane.setLeft(vertBox);
 
-        Scene scene = new Scene(mainPane, 800, 250);
+        Scene scene = new Scene(mainPane, 850, 600);
         window.setScene(scene);
         window.show();
 
@@ -318,6 +325,10 @@ public class GraphicalUserInterface extends Application{
 
     public void displayText(String output){
         display.appendText("\n" + output);
+    }
+
+    public String getFilePath(){
+        return filePathField.getText();
     }
 }
 
