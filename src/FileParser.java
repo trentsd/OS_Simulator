@@ -1,11 +1,12 @@
 import java.io.*;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.nio.file.Path;
 
 public class FileParser {
 
-    public static void parse(String filename){
-        File f = new File(filename);
+    public static void parse(Path filename){
+        File f = filename.toFile();
 
         try (BufferedReader r = new BufferedReader(new FileReader(f))) {
             String line = r.readLine();
@@ -75,6 +76,9 @@ public class FileParser {
                             Main.gui.displayText(outText);
                         }
                         break;
+                    default:
+                        String outText = "Malformed command reached. Please check syntax.";
+                        Main.gui.displayText(outText);
                 }
             }
         } catch(IOException e){

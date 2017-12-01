@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
@@ -14,17 +16,22 @@ import java.util.concurrent.BlockingQueue;
 public class CommandLine {
     private BufferedReader userInput;
     private Scanner cli;
-    private final byte STATUS_NORMAL = 0;
+    //private final byte STATUS_NORMAL = 0;
     private final BlockingQueue queue;
     private final String LOAD_APPEND = ".txt";
+    private Path jobFileDirectory;
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
-
+        setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files");
         if(debug) {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             runDebugCLI();
         }
+    }
+
+    public void setJobFileDirectory(String dir){
+        this.jobFileDirectory = Paths.get(dir);
     }
 
     private void runDebugCLI(){
@@ -53,8 +60,22 @@ public class CommandLine {
                 output = doMem();
                 break;
             case "LOAD":
-                String filename = cli.next() + LOAD_APPEND;
-                output = doLoad(filename);
+                String filename = cli.next();
+
+                try {
+                    // if filename does not end in ".txt", append ".txt"
+                    // please excuse the lame hack, sensei
+                    if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
+                        filename += LOAD_APPEND;
+                    }
+                } catch (StringIndexOutOfBoundsException e){
+                    // filename is too short to contain ".txt"
+                    // append ".txt"
+                    filename += LOAD_APPEND;
+                }
+                Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
+                System.out.println(filepath);
+                output = doLoad(filepath);
                 break;
             case "EXE":
                 output = doExe();
@@ -92,7 +113,7 @@ public class CommandLine {
         return str;
     }
 
-    private String doLoad(String filename){
+    private String doLoad(Path filename){
         String str = "LOAD\n";
         /*new ProcessControlBlock(0, 25, "a");
         new ProcessControlBlock(0, 3, "b");
@@ -126,6 +147,4 @@ public class CommandLine {
         Main.shutDown();
         return str;
     }
-
-
 }

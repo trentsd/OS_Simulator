@@ -20,4 +20,4 @@ YIELD
 
 # OUT prints a message to the screen
 
-OUT all your base are belong to us
+OUT "all your base are belong to us"
