@@ -23,7 +23,7 @@ public class CommandLine {
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
-        setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files");
+        setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files"); //debug path bc I'm lazy
         if(debug) {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             runDebugCLI();
