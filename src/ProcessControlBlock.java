@@ -48,8 +48,11 @@ public class ProcessControlBlock {
         return cyclesRemaining;
     }
 
-    public void setCyclesRemaining(int cyclesRemaining) {
-        this.cyclesRemaining = cyclesRemaining;
+    public void decCycles() {
+        if(blockTime <= 0)
+            cyclesRemaining --;
+        else
+            blockTime--;
     }
 
     public int getPid() {
