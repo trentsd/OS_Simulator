@@ -19,11 +19,11 @@ public class CommandLine {
     //private final byte STATUS_NORMAL = 0;
     private final BlockingQueue queue;
     private final String LOAD_APPEND = ".txt";
-    private Path jobFileDirectory;
+    private Path jobFileDirectory = Paths.get("");
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
-        setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files"); //debug path bc I'm lazy
+        //setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files"); //debug path bc I'm lazy
         if(debug) {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             runDebugCLI();
