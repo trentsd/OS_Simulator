@@ -64,7 +64,7 @@ public class CommandLine {
                 output = doExit();
                 break;
             default:
-                output = commandToken + " is not recognized as a command. Please try again.";
+                output = commandToken + " is not recognized as a command. Please try again.\n";
         }
 
         return output;
