@@ -1,7 +1,7 @@
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class MainMemory {
@@ -11,8 +11,19 @@ public class MainMemory {
      * FRAME_SIZE used in memory allocation for processes.
      */
     //TODO Determine proper values for these numbers
-    private static final int FRAME_SIZE = 4;
-    private static final int NUM_FRAMES = 8;
+    private static final int FRAME_SIZE = 4096;
+
+    /**
+     * Number of frames in RAM, broken up into 4KB frames
+     */
+    //private static final int NUM_FRAMES = 1048576;
+    private static final int NUM_FRAMES = 64;
+
+    /**
+     * Number of frames in storage.
+     */
+    //private static final int STORAGE_SIZE = 1048576; //TODO Calculate proper value, storage should be 6GB
+    private static final int STORAGE_SIZE = 2048;
 
     /**
      * Each frame is just an integer storing the pid of the process that is storing "data" in it.
@@ -25,14 +36,21 @@ public class MainMemory {
      */
     private BlockingQueue<Integer> freeFrames = new LinkedBlockingQueue<>();
     /**
+     * Map of page tables in memory, using pid (or maybe ptbr, idk) as key and the page table as the value.
+     */
+    private Map<Integer, PageTable> pageTables = new HashMap<>();
+    /**
+     * Map of processes in storage, using pid as key and number of pages to store as the value
+     * //TODO Maybe change for demand paging, demand paging can use replace(key, value) to dec/inc value by 1
+     */
+    private Map<Integer, Integer> storage = new HashMap<>();
+
+
+    /**
      * Queue of which frames are shared/critical
      * //TODO Make it so this does not have to be searched for every memory access?
      */
     private BlockingQueue<Integer> sharedFrames = new LinkedBlockingQueue<>();
-    /**
-     * Linked list that will act as a process table. Links ProcessControlBlock objects.
-     */
-    private BlockingQueue<ProcessControlBlock> processTable = new LinkedBlockingQueue<>();
 
     /**
      * No-Arg Constructor.
@@ -46,7 +64,131 @@ public class MainMemory {
     }
 
     /**
+     * Allocates memory for a process //TODO This requires enough space for whole process right now, change for demand paging
+     * @param pid the pid of the process being loaded, stored as key value in processTables
+     * @param mem the amount of memory required for this process, expressed in kilobytes
+     * @return a success code, 1 for main memory allocated, 0 if data put on storage, -1 if storage was full
+     *          //TODO Maybe change return value to a ptbr value
+     */
+    public int loadProc(int pid, int mem){
+        int numPages = mem / 4;
+        if ((mem%4) != 0){
+            numPages++;
+        }
+        PageTable pTable = new PageTable(numPages);
+
+        if (this.freeFrames.size() < numPages) {
+            System.out.println("Not enough space to load process: " + pid);
+            System.out.println("Needed " + numPages + " frames. Found " + this.freeFrames.size());
+            //TODO Implement swapping/virtual memory
+            if (storage.size() + numPages > STORAGE_SIZE){
+                System.out.println("Secondary Storage full");
+                return -1;
+            }
+            else {
+                storage.put(pid, numPages);
+                return 0;
+            }
+        }
+        else {
+            int freeFrame = -1;
+            for (int pNum = 0; pNum < numPages; pNum++) {
+                freeFrame = this.freeFrames.poll();
+                pTable.setFrame(pNum, freeFrame);
+                this.frameTable[freeFrame] = pid;
+            }
+            this.pageTables.put(pid, pTable);
+
+            return 1;
+        }
+    }
+
+    /**
+     * Loads a process from storage to memory.
+     * @param pid
+     * @return 1 if process was loaded into memory, -1 if not
+     */
+    public int loadFromStorage(int pid){
+        if (!this.storage.containsKey(pid)){
+            System.out.println("Invalid pid");
+            return -1;
+        }
+        int numPages = this.storage.get(pid);
+        if (this.freeFrames.size() < numPages) {
+            System.out.println("Not enough space to load process from storage: " + pid);
+            System.out.println("Needed " + numPages + " frames. Found " + this.freeFrames.size());
+            //TODO Implement swapping/virtual memory
+            return -1;
+        }
+        else {
+            PageTable pTable = new PageTable(numPages);
+            int freeFrame = -1;
+            for (int pNum = 0; pNum < numPages; pNum++) {
+                freeFrame = this.freeFrames.poll();
+                pTable.setFrame(pNum, freeFrame);
+                this.frameTable[freeFrame] = pid;
+            }
+            this.pageTables.put(pid, pTable);
+
+            return 1;
+        }
+    }
+
+    public long requestAddress(int[] logical){
+        int pid = logical[0];
+        int outerPage = logical[1];
+        int innerPage = logical[2];
+        int offset = logical[3];
+        int frame = -1;
+
+        System.out.println("\n" + offset + "\n");
+
+        if (!this.pageTables.containsKey(pid)){
+            int success = loadFromStorage(pid);
+            if (success < 0){
+                return -1;
+            }
+        }
+
+        PageTable pTable = this.pageTables.get(pid);
+
+        for (int i = 0; i<pTable.length(); i++){
+            int f = pTable.getFrame(i);
+            System.out.println("Page: " + i + " Frame: " + f);
+        }
+
+        frame = pTable.getFrame(innerPage); //TODO implement double-decker taco page table
+
+        System.out.println("\n" + offset + "\n");
+
+        frame = frame * FRAME_SIZE;
+        long phys = frame + offset;
+        String physBinary = Long.toBinaryString(phys);
+        while (physBinary.length() < 32){
+            physBinary = "0" + physBinary;
+        }
+        System.out.println(physBinary);
+        System.out.println(phys);
+
+        /*String frameBinary = Long.toBinaryString(frame);
+        while (frameBinary.length() < 20){
+            frameBinary = "0" + frameBinary;
+        }
+        String offsetBinary = Integer.toBinaryString(offset);
+        while (offsetBinary.length() < 12){
+            offsetBinary = "0" + frameBinary;
+        }
+        String addressBinary = frameBinary + offsetBinary;
+        long address = Long.parseLong(addressBinary, 2);
+        System.out.println(addressBinary);
+        System.out.println(address);*/
+
+        return phys;
+    }
+
+    /**
      * Takes a frame from the front of freeFrames and puts data in it, removes that frame from the list of free frames.
+     *
      * @param data The data to go into a frame //TODO determine what goes in this space (possibly pid or page table number)
      */
     public int initFrame(int data) {
@@ -65,6 +207,7 @@ public class MainMemory {
      */
     public void releaseFrame(int frame) {
         if (!this.freeFrames.contains(frame)) {
+            this.frameTable[frame] = -2;
             this.freeFrames.add(frame);
         }
     }
@@ -74,215 +217,125 @@ public class MainMemory {
      *
      * @param pTable The page table of a given process
      */
-    public void releaseProcessData(PageTable pTable){
+    public void releaseProcessData(PageTable pTable) {
         for (int pNum = 0; pNum < pTable.length(); pNum++) {
             this.releaseFrame(pTable.getFrame(pNum));
         }
     }
 
     /**
+     * Calculates and returns the percentage of frames that are currently in use.
+     * Might want to format this number when displaying to GUI
      *
-     * @param pcb
-     */
-    public void addProcess(ProcessControlBlock pcb){
-        this.processTable.add(pcb);
-    }
-
-    /**
-     * Calculates and returns the percentage of frames that are currently in use
      * @return The percent of physical memory being used
      */
-    public double calcMemData(){
+    public double calcMemData() {
         double totalFrames = (double) NUM_FRAMES;
         double numFreeFrames = (double) freeFrames.size();
         double numOccFrames = totalFrames - numFreeFrames;
-        return (numOccFrames/totalFrames)*100;
+        return (numOccFrames / totalFrames) * 100;
+    }
+
+    /**
+     * MOCK PCB CLASS FOR TESTING, LOADING, AND RELEASING MEMORY
+     */
+    static class PCB {
+        int pid;
+        int memRequired;
+        PageTable ptbr;
+        int parentPID;
+
+        public PCB(int id, int mem, int ppid) {
+            this.pid = id;
+            this.memRequired = mem;
+
+            int numPages = mem / 4;
+            if ((mem % 4) != 0) {
+                numPages++;
+            }
+            this.ptbr = new PageTable(numPages);
+
+            this.parentPID = ppid;
+        }
     }
 
     public static void main(String[] args) {
         MainMemory test = new MainMemory();
-        int pid0 = 0;
-        int pid1 = 1;
-        int pid2 = 2;
-        int pid3 = 3;
-        int pid4 = 4;
-        int pid5 = 5;
-        int pid6 = 6;
-        PageTable pTable0 = new PageTable(4);
-        PageTable pTable1 = new PageTable(3);
-        PageTable pTable2 = new PageTable(2);
-        PageTable pTable3 = new PageTable(1);
-        PageTable pTable4 = new PageTable(1);
-        PageTable pTable5 = new PageTable(1);
-        PageTable pTable6 = new PageTable(3);
+        Random random = new Random();
+        for (int i = 1; i <= NUM_FRAMES; i++) {
+            test.loadProc(i, i*4);
+        }
 
-        Iterator<Integer> through = test.freeFrames.iterator();
+        Iterator throughProcess = test.pageTables.entrySet().iterator();
 
-        while (through.hasNext()) {
-            System.out.println(through.next());
+        while (throughProcess.hasNext()) {
+            Map.Entry pair = (Map.Entry) throughProcess.next();
+            int pid = (Integer) pair.getKey();
+            PageTable p = (PageTable) pair.getValue();
+            System.out.println("PID: " + pid + " needs: " + p.length());
         }
 
         int freeFrame = -1;
 
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < test.frameTable.length; i++) {
+            System.out.println(i + " ---- [" + test.frameTable[i] + "]");
+        }
 
-        if (test.freeFrames.size() < pTable0.length()){
-            System.out.println("Not enough space to load process: " + pid0);
-            System.out.println("Needed " + pTable0.length() + " frames. Found " + test.freeFrames.size());
+        double stat = test.calcMemData();
+        System.out.println("\nMemory Used: " + stat + "%\n");
+
+        test.releaseProcessData(test.pageTables.get(1));
+        test.releaseProcessData(test.pageTables.get(4));
+        test.releaseProcessData(test.pageTables.get(9));
+        test.loadProc(23, 23*4);
+
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < test.frameTable.length; i++) {
+            System.out.println(i + " ---- [" + test.frameTable[i] + "]");
+        }
+
+        stat = test.calcMemData();
+        System.out.println("\nMemory Used: " + stat + "%\n");
+
+        int[] logAddr = {23, 0, 8, 4095};
+        test.requestAddress(logAddr);
+
+        /*int pid = 23;
+        PCB pControlBlock = test.storage.get(pid);
+        if (test.freeFrames.size() < pControlBlock.ptbr.length()) {
+            System.out.println("Not enough space to load process: " + pControlBlock.pid);
+            System.out.println("Needed " + pControlBlock.ptbr.length() + " frames. Found " + test.freeFrames.size());
             //TODO Implement storage/swapping/virtual memory
-        }
-        else {
+        } else {
             freeFrame = -1;
-            for (int pNum = 0; pNum < pTable0.length(); pNum++) {
+            for (int pNum = 0; pNum < pControlBlock.ptbr.length(); pNum++) {
                 freeFrame = test.freeFrames.poll();
-                pTable0.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid0;
+                pControlBlock.ptbr.setFrame(pNum, freeFrame);
+                test.frameTable[freeFrame] = pControlBlock.pid;
             }
-            System.out.println("Page Table for pid: " + pid0);
-            for (int i = 0; i < pTable0.length(); i++) {
-                System.out.println("Page: " + i + "    Frame: " + pTable0.getFrame(i));
+            storage.remove(pid);
+        }*/
+
+        /*Iterator throughStore = storage.entrySet().iterator();
+
+        while(throughStore.hasNext()){
+            Map.Entry pair = (Map.Entry) throughProcess.next();
+            int pid = (Integer) pair.getKey();
+            PCB pControlBlock = (PCB) pair.getValue();
+            if (test.freeFrames.size() < pControlBlock.ptbr.length()) {
+                System.out.println("Not enough space to load process: " + pControlBlock.pid);
+                System.out.println("Needed " + pControlBlock.ptbr.length() + " frames. Found " + test.freeFrames.size());
+                //TODO Implement storage/swapping/virtual memory
+            } else {
+                freeFrame = -1;
+                for (int pNum = 0; pNum < pControlBlock.ptbr.length(); pNum++) {
+                    freeFrame = test.freeFrames.poll();
+                    pControlBlock.ptbr.setFrame(pNum, freeFrame);
+                    test.frameTable[freeFrame] = pControlBlock.pid;
+                }
+                storage.remove(pid);
             }
-            System.out.println();
-        }
-
-
-
-
-
-
-
-
-        if (test.freeFrames.size() < pTable1.length()){
-            System.out.println("Not enough space to load process: " + pid1);
-            System.out.println("Needed " + pTable1.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable1.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable1.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid1;
-            }
-            System.out.println("Page Table for pid: " + pid1);
-            for (int i = 0; i < pTable1.length(); i++) {
-                System.out.println("Page: " + i + "    Frame: " + pTable1.getFrame(i));
-            }
-            System.out.println();
-        }
-
-
-
-
-
-
-        if (test.freeFrames.size() < pTable2.length()){
-            System.out.println("Not enough space to load process: " + pid2);
-            System.out.println("Needed " + pTable2.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable2.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable2.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid2;
-            }
-            System.out.println("Page Table for pid: " + pid2);
-            for (int i = 0; i < pTable2.length(); i++) {
-                System.out.println("Page: " + i + "    Frame: " + pTable2.getFrame(i));
-            }
-            System.out.println();
-        }
-
-
-
-
-
-        test.releaseProcessData(pTable0);
-
-        if (test.freeFrames.size() < pTable3.length()){
-            System.out.println("Not enough space to load process: " + pid3);
-            System.out.println("Needed " + pTable3.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable3.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable3.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid3;
-            }
-        }
-        if (test.freeFrames.size() < pTable2.length()){
-            System.out.println("Not enough space to load process: " + pid2);
-            System.out.println("Needed " + pTable2.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable2.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable2.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid2;
-            }
-        }
-        if (test.freeFrames.size() < pTable4.length()){
-            System.out.println("Not enough space to load process: " + pid4);
-            System.out.println("Needed " + pTable4.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable4.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable4.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid4;
-            }
-        }
-        if (test.freeFrames.size() < pTable5.length()){
-            System.out.println("Not enough space to load process: " + pid5);
-            System.out.println("Needed " + pTable5.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable5.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable5.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid5;
-            }
-        }
-
-
-        System.out.println("MAIN MEMORY");
-        for (int i = 0; i<test.frameTable.length; i++){
-            System.out.println("[" + test.frameTable[i] + "]");
-        }
-        System.out.println();
-
-
-
-        test.releaseProcessData(pTable2);
-        test.releaseProcessData(pTable5);
-
-        if (test.freeFrames.size() < pTable6.length()){
-            System.out.println("Not enough space to load process: " + pid6);
-            System.out.println("Needed " + pTable6.length() + " frames. Found " + test.freeFrames.size());
-            //TODO Implement storage/swapping/virtual memory
-        }
-        else {
-            freeFrame = -1;
-            for (int pNum = 0; pNum < pTable6.length(); pNum++) {
-                freeFrame = test.freeFrames.poll();
-                pTable6.setFrame(pNum, freeFrame);
-                test.frameTable[freeFrame] = pid6;
-            }
-        }
-
-        System.out.println("MAIN MEMORY");
-        for (int i = 0; i<test.frameTable.length; i++){
-            System.out.println("[" + test.frameTable[i] + "]");
-        }
-
+        }*/
     }
 }

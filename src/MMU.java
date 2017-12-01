@@ -29,14 +29,16 @@ public class MMU {
      * Process a virtual address, breaking it up into P1, P2, and Offset.
      *  Converts the address into a string of its binary form, pads left with 0 if less than 32 bits,
      *      and calculates P1, P2, and Offset from the first 10 bits, second 10 bits, and last 12 bits respectively.
+     * @param pid the pid of the process requesting the address, just gets sent with the translated virtual address
      * @param addr A virtual address
-     * @return Integer array of size 3, named logical
-     *      logical[0] == P1
-     *      logical[1] == P2
-     *      logical[2] == Offset
+     * @return Integer array of size 4, named logical
+     *      logical[0] == pid
+     *      logical[1] == P1
+     *      logical[2] == P2
+     *      logical[3] == Offset
      * @throws IllegalArgumentException if addr is not a valid address
      */
-    public static int[] processAddress(long addr) throws IllegalArgumentException{
+    public static int[] processAddress(int pid, long addr) throws IllegalArgumentException{
         if (addr>MAX_VIRT_ADDRESS || addr<0){
             throw new IllegalArgumentException("MMU passed invalid virtual address: " + addr);
         }
@@ -63,13 +65,13 @@ public class MMU {
             throw new IllegalArgumentException("MMU passed invalid virtual address: " + addr);
         }
 
-        int[] logical = new int[3];
-        logical[0] = p1;
-        logical[1] = p2;
-        logical[2] = offset;
+        int[] logical = new int[4];
+        logical[0] = pid;
+        logical[1] = p1;
+        logical[2] = p2;
+        logical[3] = offset;
 
         return logical;
-
     }
 
 }
