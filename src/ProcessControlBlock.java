@@ -11,6 +11,7 @@ public class ProcessControlBlock {
     public int incubateTime;
     public int state;
     public int parentId = -1;
+    public int reqMem; //in KB
 
     private LinkedList commandQueue = new LinkedList();
 
@@ -20,8 +21,10 @@ public class ProcessControlBlock {
         this.incubateTime = incubateTime;
         this.cyclesRequired = cycles;
         cyclesRemaining = cycles;
-
-        Main.clock.incubatingProcs.add(this);
+        if(incubateTime > 0)
+            Main.clock.incubatingProcs.add(this);
+        else
+            spawn();
     }
 
 
@@ -45,12 +48,19 @@ public class ProcessControlBlock {
         return cyclesRemaining;
     }
 
-    public void setCyclesRemaining(int cyclesRemaining) {
-        this.cyclesRemaining = cyclesRemaining;
+    public void decCycles() {
+        if(blockTime <= 0)
+            cyclesRemaining --;
+        else
+            blockTime--;
     }
 
     public int getPid() {
         return pid;
+    }
+
+    public int getState() {
+        return state;
     }
 
     public void setPid(int pid) {
@@ -73,6 +83,20 @@ public class ProcessControlBlock {
         incubateTime--;
         if(incubateTime <= 0) return true;
         else return false;
+    }
+
+    public void spawn(){
+        Main.clock.incubatingProcs.remove(this);
+        Main.clock.newProcs.add(this);//spawn proc into new queue
+        state = States.NEW;
+        //request mem
+        Main.clock.newProcs.remove(this);//move proc into the ready queue once it has memory allocated
+        try {
+            Main.queue.put(this);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        state = States.READY;
     }
 }
 
