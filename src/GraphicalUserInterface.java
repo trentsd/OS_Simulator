@@ -46,7 +46,7 @@ public class GraphicalUserInterface extends Application{
     private BorderPane pane;
     private VBox infoBox = new VBox();
     private TextArea display;
-    private TextField filePathField;
+
 
     //------All this stuff is for main thread synchronization------
     public static final CountDownLatch latch = new CountDownLatch(1);
@@ -220,10 +220,8 @@ public class GraphicalUserInterface extends Application{
 
         buttons.getChildren().addAll(roundRobinButton, firstInButton, shortestButton);
 
-        filePathField = new TextField("default/file/path");
 
-
-        vertBox.getChildren().addAll(display, commandInput, buttons, filePathField);
+        vertBox.getChildren().addAll(display, commandInput, buttons);
 
         mainPane.setLeft(vertBox);
 
@@ -325,10 +323,6 @@ public class GraphicalUserInterface extends Application{
 
     public void displayText(String output){
         display.appendText("\n" + output);
-    }
-
-    public String getFilePath(){
-        return filePathField.getText();
     }
 }
 
