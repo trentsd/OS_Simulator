@@ -1,5 +1,5 @@
 69
-calculate 50
+calculate 50 60
 yield
-calculate 25
+calculate 25 26
 out "WRATH"

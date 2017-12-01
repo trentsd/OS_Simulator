@@ -77,7 +77,21 @@ public class FileParser {
 
                 switch(commandToken.toUpperCase()){
                     case "CALCULATE":
-                        commandQueue.add(Commands.CALCULATE);
+                        int[] randArray = new int[2]; // The Truth is not for all men, but only for those who seek it.
+                        for(int i = 0; i < randArray.length; i++){
+                            if(in.hasNextInt()){
+                                randArray[i] = in.nextInt();
+                            }
+                            else{
+                                Main.gui.displayText("Malformed CALCULATE command reached. 2 integers are required " +
+                                        "after program load commands.");
+                            }
+                        }
+
+                        int numCalculate = RNGesus.randInRange(randArray[0], randArray[1]);
+
+                        for(int i = 0; i < numCalculate; i++)
+                            commandQueue.add(Commands.CALCULATE);
                         break;
                     case "YIELD":
                         commandQueue.add(Commands.YIELD);
