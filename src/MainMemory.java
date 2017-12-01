@@ -11,7 +11,7 @@ public class MainMemory {
      * FRAME_SIZE used in memory allocation for processes.
      */
     //TODO Determine proper values for these numbers
-    private static final int FRAME_SIZE = 4096;
+    public static final int FRAME_SIZE = 4096;
 
     /**
      * Number of frames in RAM, broken up into 4KB frames
@@ -65,14 +65,15 @@ public class MainMemory {
 
     /**
      * Allocates memory for a process //TODO This requires enough space for whole process right now, change for demand paging
+     *
      * @param pid the pid of the process being loaded, stored as key value in processTables
      * @param mem the amount of memory required for this process, expressed in kilobytes
-     * @return a success code, 1 for main memory allocated, 0 if data put on storage, -1 if storage was full
-     *          //TODO Maybe change return value to a ptbr value
+     * @return a success code, 1 for main memory allocated, 0 if data add on storage, -1 if storage was full
+     * //TODO Maybe change return value to a ptbr value
      */
-    public int loadProc(int pid, int mem){
+    public int loadProc(int pid, int mem) {
         int numPages = mem / 4;
-        if ((mem%4) != 0){
+        if ((mem % 4) != 0) {
             numPages++;
         }
         PageTable pTable = new PageTable(numPages);
@@ -81,16 +82,14 @@ public class MainMemory {
             System.out.println("Not enough space to load process: " + pid);
             System.out.println("Needed " + numPages + " frames. Found " + this.freeFrames.size());
             //TODO Implement swapping/virtual memory
-            if (storage.size() + numPages > STORAGE_SIZE){
+            if (storage.size() + numPages > STORAGE_SIZE) {
                 System.out.println("Secondary Storage full");
                 return -1;
-            }
-            else {
+            } else {
                 storage.put(pid, numPages);
                 return 0;
             }
-        }
-        else {
+        } else {
             int freeFrame = -1;
             for (int pNum = 0; pNum < numPages; pNum++) {
                 freeFrame = this.freeFrames.poll();
@@ -105,11 +104,12 @@ public class MainMemory {
 
     /**
      * Loads a process from storage to memory.
+     *
      * @param pid
      * @return 1 if process was loaded into memory, -1 if not
      */
-    public int loadFromStorage(int pid){
-        if (!this.storage.containsKey(pid)){
+    public int loadFromStorage(int pid) {
+        if (!this.storage.containsKey(pid)) {
             System.out.println("Invalid pid");
             return -1;
         }
@@ -119,8 +119,7 @@ public class MainMemory {
             System.out.println("Needed " + numPages + " frames. Found " + this.freeFrames.size());
             //TODO Implement swapping/virtual memory
             return -1;
-        }
-        else {
+        } else {
             PageTable pTable = new PageTable(numPages);
             int freeFrame = -1;
             for (int pNum = 0; pNum < numPages; pNum++) {
@@ -134,7 +133,16 @@ public class MainMemory {
         }
     }
 
-    public long requestAddress(int[] logical){
+    /**
+     * Takes in a logical address fro MMU, if not in memory, attempts to load from storage.
+     *      If cannot load from storage, return -1 for physical address and frame
+     * @param logical
+     * @return an array where:
+     *          long[0] = physical address
+     *          long[1] = frame
+     */
+    public long[] requestAddress(int[] logical) {
+
         int pid = logical[0];
         int outerPage = logical[1];
         int innerPage = logical[2];
@@ -143,16 +151,16 @@ public class MainMemory {
 
         System.out.println("\n" + offset + "\n");
 
-        if (!this.pageTables.containsKey(pid)){
+        if (!this.pageTables.containsKey(pid)) {
             int success = loadFromStorage(pid);
-            if (success < 0){
-                return -1;
+            if (success < 0) {
+                return new long[]{-1, -1};
             }
         }
 
         PageTable pTable = this.pageTables.get(pid);
 
-        for (int i = 0; i<pTable.length(); i++){
+        for (int i = 0; i < pTable.length(); i++) {
             int f = pTable.getFrame(i);
             System.out.println("Page: " + i + " Frame: " + f);
         }
@@ -161,10 +169,10 @@ public class MainMemory {
 
         System.out.println("\n" + offset + "\n");
 
-        frame = frame * FRAME_SIZE;
-        long phys = frame + offset;
+        long physFrame = frame * FRAME_SIZE;
+        long phys = physFrame + offset;
         String physBinary = Long.toBinaryString(phys);
-        while (physBinary.length() < 32){
+        while (physBinary.length() < 32) {
             physBinary = "0" + physBinary;
         }
         System.out.println(physBinary);
@@ -183,7 +191,17 @@ public class MainMemory {
         System.out.println(addressBinary);
         System.out.println(address);*/
 
-        return phys;
+        return new long[]{phys, frame};
+    }
+
+    /**
+     * Selects a victim page of virtual memory to swap with desired page
+     * @param logical Logical address holding desired page
+     */
+    public void swapPage(int[] logical){
+        //TODO FINISH THIS
+        System.out.println("i dont do anything yet. sorry\n");
+        System.out.println("¯\\_(ツ)_/¯");
     }
 
     /**
@@ -261,9 +279,10 @@ public class MainMemory {
 
     public static void main(String[] args) {
         MainMemory test = new MainMemory();
+        TLB tlb = new TLB();
         Random random = new Random();
         for (int i = 1; i <= NUM_FRAMES; i++) {
-            test.loadProc(i, i*4);
+            test.loadProc(i, i * 4);
         }
 
         Iterator throughProcess = test.pageTables.entrySet().iterator();
@@ -285,7 +304,30 @@ public class MainMemory {
         double stat = test.calcMemData();
         System.out.println("\nMemory Used: " + stat + "%\n");
 
-        test.releaseProcessData(test.pageTables.get(1));
+
+        for (int i = 1; i<20;i++) {
+            int[] logAddr = {i, 0, 0, 0};
+            long tlbHitMis = tlb.get(logAddr);
+            if (tlbHitMis > 0) {
+                System.out.println("TLB HIT!! ----- " + tlbHitMis);
+            } else {
+                System.out.print("TLB MISS :'( ");
+                long[] memoryAccess = test.requestAddress(logAddr);
+                long requestSuccess = memoryAccess[0];
+                int returnFrame = (int) memoryAccess[1];
+                if (requestSuccess >= 0) {
+                    tlb.swap(logAddr, returnFrame);
+                }
+                else {
+                    test.swapPage(logAddr);
+                }
+            }
+        }
+
+
+        System.out.print(tlb.toString());
+
+        /*test.releaseProcessData(test.pageTables.get(1));
         test.releaseProcessData(test.pageTables.get(4));
         test.releaseProcessData(test.pageTables.get(9));
         test.loadProc(23, 23*4);
@@ -296,10 +338,7 @@ public class MainMemory {
         }
 
         stat = test.calcMemData();
-        System.out.println("\nMemory Used: " + stat + "%\n");
-
-        int[] logAddr = {23, 0, 8, 4095};
-        test.requestAddress(logAddr);
+        System.out.println("\nMemory Used: " + stat + "%\n");*/
 
         /*int pid = 23;
         PCB pControlBlock = test.storage.get(pid);
