@@ -21,8 +21,10 @@ public class ProcessControlBlock {
         this.incubateTime = incubateTime;
         this.cyclesRequired = cycles;
         cyclesRemaining = cycles;
-
-        Main.clock.incubatingProcs.add(this);
+        if(incubateTime > 0)
+            Main.clock.incubatingProcs.add(this);
+        else
+            spawn();
     }
 
 
