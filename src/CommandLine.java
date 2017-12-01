@@ -79,7 +79,7 @@ public class CommandLine {
                 output = "debug";
                 break;
             default:
-                Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.\n");
+                Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.");
                 output = commandToken + " is not recognized as a command. Please try again.\n";
         }
 
