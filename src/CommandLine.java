@@ -74,7 +74,12 @@ public class CommandLine {
             case "EXIT":
                 output = doExit();
                 break;
+            case "DEBUG":
+                doDebug();
+                output = "debug";
+                break;
             default:
+                Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.\n");
                 output = commandToken + " is not recognized as a command. Please try again.\n";
         }
 
@@ -156,20 +161,21 @@ public class CommandLine {
             default:
                 Main.gui.displayText("Malformed load command reached. Please state what filetype.");
         }
-
         Main.gui.displayText("Loaded processes");
         return str;
     }
 
     private String doExe(){
         String str = "EXE\n";
-        Main.clock.execute = 100;
-        Main.gui.displayText("Running for 100 cycles");
+        Main.clock.execute = 10;
+        Main.gui.displayText("Running for 10 cycles");
         return str;
     }
 
     private String doReset(){
         String str = "RESET\n";
+
+        Main.clock.reset();
         return str;
     }
 
@@ -177,5 +183,19 @@ public class CommandLine {
         String str = "Exiting!";
         Main.shutDown();
         return str;
+    }
+
+    private void doDebug(){
+        new ProcessControlBlock(0, 25, "a");
+        new ProcessControlBlock(0, 3, "b");
+        new ProcessControlBlock(0, 20, "c");
+        new ProcessControlBlock(0, 25, "one");
+        new ProcessControlBlock(0, 50, "two");
+        new ProcessControlBlock(0, 40, "three");
+        new ProcessControlBlock(0, 2, "four");
+        new ProcessControlBlock(0, 10, "five");
+        new ProcessControlBlock(0, 20, "six");
+
+        Main.gui.displayText("Processes loaded");
     }
 }

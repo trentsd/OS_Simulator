@@ -39,6 +39,7 @@ public class GraphicalUserInterface extends Application{
     private TableColumn procCol;
     private TableColumn totalCol;
     private TableColumn remainingCol;
+    private TableColumn stateCol;
     public ObservableList<ProcessControlBlock> procsObserver;
 
 
@@ -138,10 +139,20 @@ public class GraphicalUserInterface extends Application{
                 new PropertyValueFactory<>("cyclesRemaining")
         );
 
+        stateCol = new TableColumn("Status");
+        stateCol.setPrefWidth(80);
+        stateCol.setCellValueFactory(
+                new PropertyValueFactory<>("state")
+        );
+
         table.setItems(procsObserver);
-        table.getColumns().addAll(procCol, totalCol, remainingCol);
+        table.getColumns().addAll(procCol, totalCol, remainingCol, stateCol);
 
         infoBox.getChildren().add(table);
+
+        Label stateKey = new Label("NEW = 0, READY = 1, RUN = 2, WAIT = 3, EXIT = 4");
+        infoBox.getChildren().add(stateKey);
+
         mainPane.setRight(infoBox);
 
         //execute the close method on clicking the exit button
@@ -157,6 +168,7 @@ public class GraphicalUserInterface extends Application{
 
         display = new TextArea();
         display.setMaxWidth(400);
+        display.setMinHeight(500);
         display.setWrapText(true);
         display.setEditable(false);
 
@@ -213,7 +225,7 @@ public class GraphicalUserInterface extends Application{
 
         mainPane.setLeft(vertBox);
 
-        Scene scene = new Scene(mainPane, 800, 250);
+        Scene scene = new Scene(mainPane, 850, 600);
         window.setScene(scene);
         window.show();
 
