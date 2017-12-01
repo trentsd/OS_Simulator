@@ -10,6 +10,7 @@ public class Main {
     static CpuClock clock;
     static BlockingQueue queue = new LinkedBlockingQueue();
     static GraphicalUserInterface gui;
+    static int pid = 0; // I really should lose my programming license for this
 
     public static void main(String[] args) {
 

@@ -15,8 +15,15 @@ public class ProcessControlBlock {
 
     private LinkedList commandQueue = new LinkedList();
 
-
-    public ProcessControlBlock(/*LinkedList commandQueue,*/ int incubateTime, int cycles, String name){
+    /**
+     * This is now the debug constructor.
+     *
+     * todo: remove
+     * @param incubateTime
+     * @param cycles
+     * @param name
+     */
+    public ProcessControlBlock(int incubateTime, int cycles, String name){
         this.name = name;
         this.incubateTime = incubateTime;
         this.cyclesRequired = cycles;
@@ -24,6 +31,23 @@ public class ProcessControlBlock {
 
         Main.clock.incubatingProcs.add(this);
         cyclesRemaining = cycles;
+        if(incubateTime > 0)
+            Main.clock.incubatingProcs.add(this);
+        else
+            spawn();
+    }
+
+    public ProcessControlBlock(LinkedList commandQueue, String name, int reqMem, int incubateTime){
+        this.commandQueue = commandQueue;
+        this.name = name;
+        this.reqMem = reqMem;
+        this.cyclesRequired = commandQueue.size();
+        this.cyclesRemaining = this.cyclesRequired;
+
+        this.pid = Main.pid; //evil horrible global state
+        Main.pid++; //no god please don't do this programmer
+
+        //Main.clock.incubatingProcs.add(this);
         if(incubateTime > 0)
             Main.clock.incubatingProcs.add(this);
         else

@@ -63,7 +63,7 @@ public class CommandLine {
                 output = doMem();
                 break;
             case "LOAD":
-                output = doLoad(/*filepath, loadType*/);
+                output = doLoad();
                 break;
             case "EXE":
                 output = doExe();
@@ -111,18 +111,8 @@ public class CommandLine {
         return str;
     }
 
-    private String doLoad(/*Path filename, String loadType*/){
+    private String doLoad(){
         String str = "LOAD\n";
-        /*new ProcessControlBlock(0, 25, "a");
-        new ProcessControlBlock(0, 3, "b");
-        new ProcessControlBlock(0, 20, "c");
-        new ProcessControlBlock(0, 2500, "one");
-        new ProcessControlBlock(0, 1000, "two");
-        new ProcessControlBlock(0, 2000, "three");
-        new ProcessControlBlock(0, 10000, "four");
-        new ProcessControlBlock(0, 3000, "five");
-        new ProcessControlBlock(0, 1000, "six");
-*/
         String filename = cli.next();
 
         try {
