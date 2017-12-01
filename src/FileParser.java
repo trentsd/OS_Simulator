@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.nio.file.Path;
@@ -9,19 +10,32 @@ public class FileParser {
         File f = filename.toFile();
 
         try (BufferedReader r = new BufferedReader(new FileReader(f))) {
-            String line = r.readLine();
-            String type = selectType(line);
-
-            if(type.equals("PROGRAM")){
-                parseProgram(line, r);
-            }
-            else if(type.equals("JOB")){
-                parseJob(line, r);
-            }
+            parseJob(r);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            Main.gui.displayText("File " + filename.toAbsolutePath().toString() + " not found. Check to make " +
+                    "sure working directory is correct or try changing directories with CD <directory> .");
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("Exception caught in parse(filename)");
+        }
+    }
+
+    /**
+     * Parses program files
+     * @param filename
+     * @param waitCycles
+     */
+    public static void parse(Path filename, int waitCycles){
+        File f = filename.toFile();
+
+        try(BufferedReader r = new BufferedReader(new FileReader(f))){
+            parseProgram(r, waitCycles);
+        }catch (FileNotFoundException e) {
+            Main.gui.displayText("File " + filename.toAbsolutePath().toString() + " not found. Check to make " +
+                    "sure working directory is correct or try changing directories with CD <directory> .");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Exception caught in parse(filename, waitCycles)");
         }
     }
 
@@ -38,8 +52,7 @@ public class FileParser {
         }
     }
 
-    private static void parseJob(String firstLine, BufferedReader r){
-        Main.cli.interpretInput(firstLine);
+    private static void parseJob(BufferedReader r){
         String line;
         try {
             while ((line = r.readLine()) != null){
@@ -47,13 +60,16 @@ public class FileParser {
             }
         }catch(IOException e){
             e.printStackTrace();
+            System.out.println("Exception caught in parseJob()");
         }
     }
 
-    private static void parseProgram(String line, BufferedReader r){
-        Scanner in = new Scanner(line);
-        int memReq = in.nextInt();
+    private static void parseProgram(BufferedReader r, int waitCycle){
+        String line;
+        LinkedList commandQueue = new LinkedList<Integer>();
         try {
+            Scanner in = new Scanner(r.readLine());
+            int memReq = in.nextInt();
             while ((line = r.readLine()) != null) {
                 in = new Scanner(line);
 
@@ -61,10 +77,13 @@ public class FileParser {
 
                 switch(commandToken.toUpperCase()){
                     case "CALCULATE":
+                        commandQueue.add(Commands.CALCULATE);
                         break;
                     case "YIELD":
+                        commandQueue.add(Commands.YIELD);
                         break;
                     case "I/O":
+                        commandQueue.add(Commands.IO);
                         break;
                     case "OUT":
                         in.useDelimiter("\"");
@@ -83,6 +102,7 @@ public class FileParser {
             }
         } catch(IOException e){
             e.printStackTrace();
+            System.out.println("Exception caught in parseProgram()");
         }
     }
 }
