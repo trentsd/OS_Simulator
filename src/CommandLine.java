@@ -23,7 +23,7 @@ public class CommandLine {
 
     public CommandLine(BlockingQueue q, boolean debug){
         this.queue = q;
-        //setJobFileDirectory("C:\\Users\\jccon\\IdeaProjects\\cmsc312_os_simulator\\files"); //debug path bc I'm lazy
+        setJobFileDirectory(jobFileDirectory.toString() + "files");
         if(debug) {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             runDebugCLI();
@@ -53,6 +53,9 @@ public class CommandLine {
         String commandToken = cli.next();
 
         switch(commandToken.toUpperCase()){
+            case "CD":
+                output = doCD();
+                break;
             case "PROC":
                 output = doProc();
                 break;
@@ -60,22 +63,7 @@ public class CommandLine {
                 output = doMem();
                 break;
             case "LOAD":
-                String filename = cli.next();
-
-                try {
-                    // if filename does not end in ".txt", append ".txt"
-                    // please excuse the lame hack, sensei
-                    if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
-                        filename += LOAD_APPEND;
-                    }
-                } catch (StringIndexOutOfBoundsException e){
-                    // filename is too short to contain ".txt"
-                    // append ".txt"
-                    filename += LOAD_APPEND;
-                }
-                Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
-                System.out.println(filepath);
-                output = doLoad(filepath);
+                output = doLoad(/*filepath, loadType*/);
                 break;
             case "EXE":
                 output = doExe();
@@ -91,6 +79,11 @@ public class CommandLine {
         }
 
         return output;
+    }
+
+    private String doCD(){
+        this.jobFileDirectory = Paths.get(cli.next());
+        return "Changed directory";
     }
 
     private String doProc(){
@@ -113,7 +106,7 @@ public class CommandLine {
         return str;
     }
 
-    private String doLoad(Path filename){
+    private String doLoad(/*Path filename, String loadType*/){
         String str = "LOAD\n";
         /*new ProcessControlBlock(0, 25, "a");
         new ProcessControlBlock(0, 3, "b");
@@ -125,7 +118,45 @@ public class CommandLine {
         new ProcessControlBlock(0, 3000, "five");
         new ProcessControlBlock(0, 1000, "six");
 */
-        FileParser.parse(filename);
+        String filename = cli.next();
+
+        try {
+            // if filename does not end in ".txt", append ".txt"
+            // please excuse the lame hack, sensei
+            if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
+                filename += LOAD_APPEND;
+            }
+        } catch (StringIndexOutOfBoundsException e){
+            // filename is too short to contain ".txt"
+            // append ".txt"
+            filename += LOAD_APPEND;
+        }
+        Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
+        System.out.println(filepath);
+        String loadType = cli.next().toUpperCase();
+        switch(loadType){
+            case "PROG":
+                int[] cycleTime = new int[2];
+                for(int i = 0; i < cycleTime.length; i++){
+                    if(cli.hasNextInt()){
+                        cycleTime[i] = cli.nextInt();
+                    }
+                    else{
+                        Main.gui.displayText("Malformed load command reached. 2 integers are required " +
+                                "after program load commands.");
+                    }
+                }
+
+                int waitCycles = RNGesus.randInRange(cycleTime[0], cycleTime[1]);
+                FileParser.parse(filepath, waitCycles);
+                break;
+            case "JOB":
+                FileParser.parse(filepath);
+                break;
+            default:
+                Main.gui.displayText("Malformed load command reached. Please state what filetype.");
+        }
+
         Main.gui.displayText("Loaded processes");
         return str;
     }
