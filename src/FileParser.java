@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.nio.file.Path;
@@ -15,6 +16,7 @@ public class FileParser {
                     "sure working directory is correct or try changing directories with CD <directory> .");
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("Exception caught in parse(filename)");
         }
     }
 
@@ -33,6 +35,7 @@ public class FileParser {
                     "sure working directory is correct or try changing directories with CD <directory> .");
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println("Exception caught in parse(filename, waitCycles)");
         }
     }
 
@@ -57,11 +60,13 @@ public class FileParser {
             }
         }catch(IOException e){
             e.printStackTrace();
+            System.out.println("Exception caught in parseJob()");
         }
     }
 
     private static void parseProgram(BufferedReader r, int waitCycle){
         String line;
+        LinkedList commandQueue = new LinkedList<Integer>();
         try {
             Scanner in = new Scanner(r.readLine());
             int memReq = in.nextInt();
@@ -72,10 +77,13 @@ public class FileParser {
 
                 switch(commandToken.toUpperCase()){
                     case "CALCULATE":
+                        commandQueue.add(Commands.CALCULATE);
                         break;
                     case "YIELD":
+                        commandQueue.add(Commands.YIELD);
                         break;
                     case "I/O":
+                        commandQueue.add(Commands.IO);
                         break;
                     case "OUT":
                         in.useDelimiter("\"");
@@ -94,6 +102,7 @@ public class FileParser {
             }
         } catch(IOException e){
             e.printStackTrace();
+            System.out.println("Exception caught in parseProgram()");
         }
     }
 }

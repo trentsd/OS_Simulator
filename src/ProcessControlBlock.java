@@ -15,11 +15,11 @@ public class ProcessControlBlock {
     private LinkedList commandQueue = new LinkedList();
 
 
-    public ProcessControlBlock(int incubateTime, int cycles, String name){
+    public ProcessControlBlock(LinkedList commandQueue, int incubateTime, int cycles, String name){
         this.name = name;
         this.incubateTime = incubateTime;
         this.cyclesRequired = cycles;
-        cyclesRemaining = cycles;
+        this.cyclesRemaining = cycles;
 
         Main.clock.incubatingProcs.add(this);
     }
