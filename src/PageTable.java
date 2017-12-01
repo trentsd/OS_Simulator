@@ -15,31 +15,41 @@ public class PageTable {
      * Uses Least Recently Used algorithm with counter implementation
      * @return the location in page table to be replaced
      */
-    public int selectVictim(){
-        int victim = Integer.MAX_VALUE;
-        for (int i=0; i<this.pTable.length; i++){
-            if (this.pTable[i].reference < victim){
-                victim = i;
+    public int[] selectVictim(int globalNumRef){
+        int victimPage = -1;
+        int numRef = globalNumRef;
+        for (int pNum = 0; pNum < pTable.length; pNum++){
+            if (this.pTable[pNum].validBit && this.pTable[pNum].reference < numRef && !this.pTable[pNum].shared){
+                victimPage = pNum;
+                numRef = referencesTo(pNum);
             }
         }
-
-        if (victim == Integer.MAX_VALUE){ //Ensures a victim was found
-            return -1;
-        }
-        return victim;
+        return new int[]{victimPage, numRef};
     }
 
-    public void swap(int desiredPage){
-        int victim = selectVictim();
-
+    /**
+     * When loading or swapping a page, use this to change the valid bit
+     * @param pNum the index of the PageTableEntry in question
+     * @param valid what to set the valid bit to
+     */
+    public void setEntryAsValid(int pNum, boolean valid){
+        this.pTable[pNum].validBit = valid;
     }
 
     public int getFrame(int pageNum){
-        return this.pTable[pageNum].getFrame();
+        return this.pTable[pageNum].frame;
     }
 
     public void setFrame(int pageNum, int frameNum){
-        this.pTable[pageNum].setFrame(frameNum);
+        this.pTable[pageNum].frame = frameNum;
+    }
+
+    public void setShared(int pageNum, boolean share){
+        this.pTable[pageNum].shared = share;
+    }
+
+    public boolean isShared(int pageNum){
+        return this.pTable[pageNum].shared;
     }
 
     /**
@@ -50,37 +60,48 @@ public class PageTable {
         return this.pTable.length;
     }
 
+    /**
+     * Returns number of references to this entry in the page table since it was loaded into memory
+     */
+    public int referencesTo(int pNum){
+        return this.pTable[pNum].reference;
+    }
+
+    public void makeReference(int pNum){
+        this.pTable[pNum].reference++;
+    }
+
+    public void resetReference(int pNum){
+        this.pTable[pNum].reference = 0;
+    }
+
+    /**
+     * Returns whether or not this entry in the page table is valid
+     */
+    public boolean isValid(int pNum){
+        return this.pTable[pNum].validBit;
+    }
+
+    /**
+     * Checks to see if the frame referenced by this page table entry is being shared
+     */
+
+
     class TableEntry{
-        boolean valid;
+        boolean validBit;
         boolean shared;
         int reference;
         int frame;
 
         public TableEntry() {
             this.frame = -1;
-            this.valid = false;
+            this.validBit = false;
             this.shared = false;
             this.reference = 0;
         }
 
-        public void setInvalid(){
-            this.valid = false;
-        }
-
-        public void reference(int clock){
-            this.reference = clock;
-        }
-
-        public void setFrame(int f){
-            this.frame = f;
-        }
-
-        public int getFrame(){
-            return this.frame;
-        }
-
-        public void setShared(boolean share){
-            this.shared = share;
+        public void resetRefCount(){
+            this.reference = 0;
         }
     }
 }

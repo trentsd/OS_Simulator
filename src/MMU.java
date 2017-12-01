@@ -1,3 +1,5 @@
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 public class MMU {
@@ -13,12 +15,141 @@ public class MMU {
     private final static int MAX_P2 = 1023;
     private final static int MAX_OFFSET = 4095;
 
+    //private Registers registers; //MIGHT JUST BE FIELDS IN CPU
+    private TLB tlb;
+    //private Cache cache;
+    private MainMemory memory;
+
+    public MMU() {
+        this.tlb = new TLB();
+        this.memory = new MainMemory();
+    }
+
+    /**
+     * Allocates memory for a process.
+     * If not enough space in memory, will load what it can into mem and rest into storage
+     *
+     * @param pid the pid of the process being loaded, stored as key value in processTables
+     * @param mem the amount of memory required for this process, expressed in kilobytes
+     * @return a success code, 1 for main memory allocated, 0 if data add on storage, -1 if storage was full
+     * //TODO Maybe change return value to a ptbr value
+     */
+    public int loadProc(int pid, int mem) {
+        int numPages = mem / 4;
+        if ((mem % 4) != 0) {
+            numPages++;
+        }
+        PageTable pTable = new PageTable(numPages);
+
+        if (this.memory.getFreeFrames().size() < numPages) {
+            System.out.println("Not enough space to load process: " + pid);
+            System.out.println("Needed " + numPages + " frames. Found " + this.memory.getFreeFrames().size());
+            int somePages = this.memory.getFreeFrames().size();
+            int restPages = numPages - somePages;
+            //TODO Implement swapping/virtual memory
+            if (this.memory.getStorage().size() + restPages > MainMemory.STORAGE_SIZE) {
+                System.out.println("Secondary Storage full");
+                return -1;
+            } else {
+                int freeFrame = -1;
+                for (int pNum = 0; pNum < somePages; pNum++) {
+                    freeFrame = this.memory.getFreeFrames().poll();
+                    pTable.setFrame(pNum, freeFrame);
+                    pTable.setEntryAsValid(pNum, true);
+                    this.memory.getFrameTable()[freeFrame] = pid;
+                }
+                this.memory.getStorage().put(pid, restPages);
+                System.out.println("\nStored " + restPages + " pages of PID " + pid + " in storage\n");
+                this.memory.getPageTables().put(pid, pTable);
+                return 0;
+            }
+        } else {
+            int freeFrame = -1;
+            for (int pNum = 0; pNum < numPages; pNum++) {
+                freeFrame = this.memory.getFreeFrames().poll();
+                pTable.setFrame(pNum, freeFrame);
+                pTable.setEntryAsValid(pNum, true);
+                this.memory.getFrameTable()[freeFrame] = pid;
+            }
+            this.memory.getPageTables().put(pid, pTable);
+            return 1;
+        }
+    }
+
+    /**
+     * Loads a requested page from storage
+     * If memory is full, swap
+     * else just load and decrement storage count
+     *
+     * @param pid
+     * @param requestPage
+     * @return the frame the page was stored in
+     */
+    public int loadPageFromStorage(int pid, int requestPage) {
+        int frame = -1;
+        if (this.memory.getFreeFrames().size() == 0) {
+            frame = swapPage(pid, requestPage);
+        } else {
+            frame = this.memory.getFreeFrames().poll();
+            this.memory.getPageTables().get(pid).setFrame(requestPage, frame);
+            this.memory.getPageTables().get(pid).setEntryAsValid(requestPage, true);
+            int storeFrames = this.memory.getStorage().get(pid);
+            this.memory.getStorage().replace(pid, storeFrames - 1);
+            this.memory.getFrameTable()[frame] = pid;
+        }
+        return frame;
+    }
+
+    /**
+     * Selects a victim page and swaps with request page into storage, giving up its frame to the request page
+     *
+     * @param pid
+     * @param requestPage
+     * @return int[0] == pid of process that owns victim page
+     * int[1] == victim page
+     */
+    public int swapPage(int pid, int requestPage) {
+        int victimPid = -1;
+        int victimPage = -50;
+        int globalNumRef = Integer.MAX_VALUE;
+        Iterator throughTables = this.memory.getPageTables().entrySet().iterator();
+        while (throughTables.hasNext()) {
+            Map.Entry pair = (Map.Entry) throughTables.next();
+            int tempPid = (Integer) pair.getKey();
+            PageTable tempTable = (PageTable) pair.getValue();
+            System.out.println("Checking Pages of PID: " + tempPid);
+
+            int[] victimAndNumRef = tempTable.selectVictim(globalNumRef);
+            if (victimAndNumRef[0] >= 0) {
+                victimPid = tempPid;
+                victimPage = victimAndNumRef[0];
+                globalNumRef = victimAndNumRef[1];
+            }
+        }
+
+        int frame = this.memory.getPageTables().get(victimPid).getFrame(victimPage);
+
+        //Set values for requested page
+        this.memory.getPageTables().get(pid).setFrame(requestPage, frame);
+        this.memory.getPageTables().get(pid).setEntryAsValid(requestPage, true);
+        this.memory.getPageTables().get(pid).resetReference(requestPage);
+        this.memory.getFrameTable()[frame] = pid;
+
+        //Set values for victim page
+        this.memory.getPageTables().get(victimPid).setEntryAsValid(victimPage, false);
+        this.memory.getPageTables().get(victimPid).setShared(victimPage, false);
+        this.memory.getPageTables().get(victimPid).resetReference(victimPage);
+
+        return frame;
+    }
+
     /**
      * Creates a valid virtual address from the range of 0 to MAX_VIRT_ADDRESS
+     *
      * @return a random virtual address
      * //TODO Possibly change minimum from 0 to account for kernel space?
      */
-    public static long getRandomAddress(){
+    public static long getRandomAddress() {
         Random random = new Random();
         int first = random.nextInt(Integer.MAX_VALUE);
         long second = (long) random.nextInt(Integer.MAX_VALUE) + 1;
@@ -27,28 +158,29 @@ public class MMU {
 
     /**
      * Process a virtual address, breaking it up into P1, P2, and Offset.
-     *  Converts the address into a string of its binary form, pads left with 0 if less than 32 bits,
-     *      and calculates P1, P2, and Offset from the first 10 bits, second 10 bits, and last 12 bits respectively.
-     * @param pid the pid of the process requesting the address, just gets sent with the translated virtual address
+     * Converts the address into a string of its binary form, pads left with 0 if less than 32 bits,
+     * and calculates P1, P2, and Offset from the first 10 bits, second 10 bits, and last 12 bits respectively.
+     *
+     * @param pid  the pid of the process requesting the address, just gets sent with the translated virtual address
      * @param addr A virtual address
      * @return Integer array of size 4, named logical
-     *      logical[0] == pid
-     *      logical[1] == P1
-     *      logical[2] == P2
-     *      logical[3] == Offset
+     * logical[0] == pid
+     * logical[1] == P1
+     * logical[2] == P2
+     * logical[3] == Offset
      * @throws IllegalArgumentException if addr is not a valid address
      */
-    public static int[] processAddress(int pid, long addr) throws IllegalArgumentException{
-        if (addr>MAX_VIRT_ADDRESS || addr<0){
+    public static int[] convertVirtualAddress(int pid, long addr) throws IllegalArgumentException {
+        if (addr > MAX_VIRT_ADDRESS || addr < 0) {
             throw new IllegalArgumentException("MMU passed invalid virtual address: " + addr);
         }
 
         String binary = Long.toBinaryString(addr);
-        if (binary.length()>32){
+        if (binary.length() > 32) {
             throw new IllegalArgumentException("MMU passed invalid virtual address: " + addr);
         }
 
-        while (binary.length() < 32){
+        while (binary.length() < 32) {
             binary = "0" + binary;
         }
 
@@ -61,7 +193,7 @@ public class MMU {
         int offset = Integer.parseInt(offsetBin, 2);
 
         //Verify all values are valid
-        if (p1>MAX_P1 || p2>MAX_P2 || offset>MAX_OFFSET) {
+        if (p1 > MAX_P1 || p2 > MAX_P2 || offset > MAX_OFFSET) {
             throw new IllegalArgumentException("MMU passed invalid virtual address: " + addr);
         }
 
@@ -74,4 +206,129 @@ public class MMU {
         return logical;
     }
 
+    /**
+     * Takes in a logical address returned by convertVirtualAddress(int pid, long addr), if not in memory, attempts to load from storage.
+     * If cannot load from storage for some reason, return -1 for physical address and frame
+     *
+     * @param logical
+     * @return an array where:
+     * long[0] = physical address
+     * long[1] = frame
+     */
+    private long[] processAddress(int[] logical) {
+
+        int pid = logical[0];
+        int p1 = logical[1];
+        int p2 = logical[2];
+        int offset = logical[3];
+        int frame = -1;
+
+        if (!memory.getPageTables().get(pid).isValid(p2)) {
+            frame = loadPageFromStorage(pid, p2);
+            if (frame < 0) {
+                return new long[]{-1, -1};
+            }
+        }
+
+        PageTable pTable = memory.getPageTables().get(pid);
+
+        for (int i = 0; i < pTable.length(); i++) {
+            int f = pTable.getFrame(i);
+            System.out.println("Page: " + i + " Frame: " + f);
+        }
+
+        pTable.makeReference(p2);
+        frame = pTable.getFrame(p2); //TODO implement double-decker taco page table
+
+        System.out.println("\n" + offset + "\n");
+
+        long physFrame = frame * MainMemory.FRAME_SIZE;
+        long phys = physFrame + offset;
+        String physBinary = Long.toBinaryString(phys);
+        while (physBinary.length() < 32) {
+            physBinary = "0" + physBinary;
+        }
+        System.out.println(physBinary);
+        System.out.println(phys);
+
+        return new long[]{phys, frame};
+    }
+
+    public long requestAddressAddress(int[] logicalAddress) {
+        long tlbHitMis = this.tlb.get(logicalAddress);
+        if (tlbHitMis > 0) {
+            System.out.println("TLB HIT!! ----- " + tlbHitMis);
+            long physFrame = tlbHitMis * MainMemory.FRAME_SIZE;
+            long phys = physFrame + logicalAddress[3];
+            return phys;
+        } else {
+            System.out.println("TLB MISS :'( ");
+            long[] memoryAccess = this.processAddress(logicalAddress);
+            long physicalAddress = memoryAccess[0];
+            int returnFrame = (int) memoryAccess[1];
+            if (physicalAddress >= 0) {
+                this.tlb.swap(logicalAddress, returnFrame);
+            } else {
+                System.out.println("\n\n\nSomething went horribly wrong");
+                return -69;
+            }
+            return physicalAddress;
+        }
+    }
+
+    public static void main(String[] args) {
+        MMU mmu = new MMU();
+
+        for (int i = 1; i <= MainMemory.NUM_FRAMES; i++) {
+            mmu.loadProc(i, i * 4);
+        }
+
+        //PRINTING CONTENTS OF MAIN MEMORY
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < mmu.memory.getFrameTable().length; i++) {
+            System.out.println(i + " ---- [" + mmu.memory.getFrameTable()[i] + "]");
+        }
+
+        //PRINTING MEMORY AND STORAGE USAGE
+        double[] stats = mmu.memory.calcMemData();
+        System.out.println("\nMemory Used: " + stats[0] + " Storage Used: " + stats[1] + "%\n");
+
+
+        //TESTING REQUEST ACCESSING AND PAGING/SWAPPING
+        for (int i = 1; i < 20; i++) {
+            int[] logAddr = {i, 0, i - 1, 0};
+            long physical = mmu.requestAddressAddress(logAddr);
+            System.out.println("Physical: " + physical);
+        }
+
+        //PRINTING CONTENTS OF MAIN MEMORY
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < mmu.memory.getFrameTable().length; i++) {
+            System.out.println(i + " ---- [" + mmu.memory.getFrameTable()[i] + "]");
+        }
+
+        //Release data from a few processes
+        mmu.memory.releaseProcessData(1);
+        mmu.memory.releaseProcessData(6);
+
+        for (int i = 0; i < 64; i++) {
+            int[] logAddr = {64, 0, i, 0};
+            long phys = mmu.requestAddressAddress(logAddr);
+            System.out.println("Physical: " + phys);
+        }
+
+        //PRINTING CONTENTS OF MAIN MEMORY
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < mmu.memory.getFrameTable().length; i++) {
+            System.out.println(i + " ---- [" + mmu.memory.getFrameTable()[i] + "]");
+        }
+
+        mmu.memory.releaseProcessData(64);
+
+        //PRINTING CONTENTS OF MAIN MEMORY
+        System.out.println("\nMAIN MEMORY");
+        for (int i = 0; i < mmu.memory.getFrameTable().length; i++) {
+            System.out.println(i + " ---- [" + mmu.memory.getFrameTable()[i] + "]");
+        }
+    }
 }

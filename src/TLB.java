@@ -26,7 +26,7 @@ public class TLB {
         this.queue = new LinkedList<>();
         for (int i = 0; i<TLB_SIZE; i++){
             this.tlb[i] = new int[]{-1, -1, -1};
-            this.queue.add(i);
+            this.queue.add(-1);
         }
     }
 
@@ -36,7 +36,7 @@ public class TLB {
      * @return the physical address of the request if TLB hit, -1 if TLB miss
      * //TODO COMBINATION PIZZA HUT AND TACO BELL
      */
-    public long get(int[] logical){
+    public int get(int[] logical){
         int pid = logical[0];
         int p1 = logical[1];
         int p2 = logical[2];
@@ -53,8 +53,7 @@ public class TLB {
         if (frame < 0){
             return -1;
         }
-        frame = frame * MainMemory.FRAME_SIZE;
-        return (long) frame + offset;
+        return frame;
     }
 
 
@@ -63,13 +62,22 @@ public class TLB {
         int p1 = logical[1];
         int p2 = logical[2];
         int[] tlbEntry = {p2, pid, frame};
+        int index = -1;
         int victim = selectVictim();
-        this.tlb[victim] = tlbEntry;
+        for (int i = 0; i<TLB_SIZE; i++){
+            if (this.tlb[i][0] == victim){
+                index = i;
+                break;
+            }
+        }
+        this.tlb[index] = tlbEntry;
         this.queue.add(p2);
+        System.out.println(this.toString());
     }
 
     public int selectVictim(){
         int victim = this.queue.poll();
+        System.out.println("\nVictim entry == " + victim + "\n");
         return victim;
     }
 
