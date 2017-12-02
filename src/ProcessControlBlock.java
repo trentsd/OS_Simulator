@@ -29,7 +29,7 @@ public class ProcessControlBlock {
         this.cyclesRequired = cycles;
         this.cyclesRemaining = cycles;
 
-        Main.clock.incubatingProcs.add(this);
+        //Main.clock.incubatingProcs.add(this);
         cyclesRemaining = cycles;
         if(incubateTime > 0)
             Main.clock.incubatingProcs.add(this);
