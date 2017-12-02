@@ -40,6 +40,7 @@ public class GraphicalUserInterface extends Application{
     private TableColumn totalCol;
     private TableColumn remainingCol;
     private TableColumn stateCol;
+    private TableColumn nameCol;
     public ObservableList<ProcessControlBlock> procsObserver;
 
 
@@ -124,6 +125,12 @@ public class GraphicalUserInterface extends Application{
         procCol = new TableColumn("Process ID");
         procCol.setPrefWidth(100);
         procCol.setCellValueFactory(
+                new PropertyValueFactory<>("pid")
+        );
+
+        nameCol = new TableColumn("Name");
+        nameCol.setPrefWidth(100);
+        nameCol.setCellValueFactory(
                 new PropertyValueFactory<>("name")
         );
 
@@ -146,7 +153,7 @@ public class GraphicalUserInterface extends Application{
         );
 
         table.setItems(procsObserver);
-        table.getColumns().addAll(procCol, totalCol, remainingCol, stateCol);
+        table.getColumns().addAll(procCol, nameCol, totalCol, remainingCol, stateCol);
 
         infoBox.getChildren().add(table);
 
@@ -203,12 +210,14 @@ public class GraphicalUserInterface extends Application{
         Button roundRobinButton = new Button("RR");
         roundRobinButton.setOnAction(e -> {
             System.out.println("log: Round Robbin selected.");
+            displayText("Round Robin selected");
             Main.selectScheduler(0);
         });
 
         Button firstInButton = new Button("FcFs");
         firstInButton.setOnAction(e -> {
             System.out.println("log: FcFs selected.");
+            displayText("First Come First Serve selected");
             Main.selectScheduler(1);
         });
 
@@ -225,7 +234,7 @@ public class GraphicalUserInterface extends Application{
 
         mainPane.setLeft(vertBox);
 
-        Scene scene = new Scene(mainPane, 850, 600);
+        Scene scene = new Scene(mainPane, 920, 600);
         window.setScene(scene);
         window.show();
 
