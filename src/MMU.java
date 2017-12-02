@@ -73,6 +73,7 @@ public class MMU {
             for (int pNum = 0; pNum < numPages; pNum++) {
                 freeFrame = this.memory.getFreeFrames().poll();
                 pTable.setFrame(pNum, freeFrame);
+                pTable.valids.add(pNum);
                 pTable.setEntryAsValid(pNum, true);
                 this.memory.getFrameTable()[freeFrame] = pid;
             }
