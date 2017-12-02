@@ -16,14 +16,14 @@ public class MainMemory {
     /**
      * Number of frames in RAM, broken up into 4KB frames
      */
-    //private static final int NUM_FRAMES = 1048576;
-    public static final int NUM_FRAMES = 64;
+    public static final int NUM_FRAMES = 1048576;
+    //public static final int NUM_FRAMES = 64;
 
     /**
      * Number of frames in storage.
      */
-    //private static final int STORAGE_SIZE = 1048576; //TODO Calculate proper value, storage should be 6GB/4KB frames
-    public static final int STORAGE_SIZE = 2048;
+    public static final int STORAGE_SIZE = 111048576; //TODO Calculate proper value, storage should be 6GB/4KB frames
+    //public static final int STORAGE_SIZE = 2048;
 
     /**
      * Each frame is just an integer storing the pid of the process that is storing "data" in it.
@@ -191,7 +191,7 @@ public class MainMemory {
         return memUsed;
     }
 
-    public double calcStorageData(){
+    public double calcStorageData() {
         Iterator throughStorage = this.storage.entrySet().iterator();
         double storageOcc = 0;
         while (throughStorage.hasNext()) {
