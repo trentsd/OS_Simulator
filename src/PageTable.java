@@ -1,5 +1,6 @@
 import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class PageTable implements Cloneable{
     /**
@@ -7,14 +8,14 @@ public class PageTable implements Cloneable{
      */
     private TableEntry[] pTable;
 
-    public LinkedList<Integer> valids;
+    public BlockingQueue<Integer> valids;
     /**
      * Whether or not this pTable has any pages in memory, check this after removing a page
      */
 
     public PageTable(int numPages){
         this.pTable = new TableEntry[numPages];
-        valids = new LinkedList<>();
+        valids = new LinkedBlockingQueue<>();
         for (int i=0; i<this.pTable.length; i++){
             this.pTable[i] = new TableEntry();
         }
