@@ -1,0 +1,7 @@
+50
+OUT "SANGUINE"
+calculate 5 10
+OUT "what is the colour of night?"
+YIELD
+CALCULATE 30 100
+OUT "SANGUINE COMPLETE"
