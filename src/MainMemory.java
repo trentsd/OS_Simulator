@@ -16,8 +16,8 @@ public class MainMemory {
     /**
      * Number of frames in RAM, broken up into 4KB frames
      */
-    //private static final int NUM_FRAMES = 1048576;
-    public static final int NUM_FRAMES = 64;
+    public static final int NUM_FRAMES = 1048576;
+    //public static final int NUM_FRAMES = 64;
 
     /**
      * Number of frames in storage.

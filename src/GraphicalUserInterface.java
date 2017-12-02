@@ -1,6 +1,8 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -34,6 +36,9 @@ public class GraphicalUserInterface extends Application{
     private ExecutorService executor;
     private ConcurrentLinkedQueue<Number> memDataQueue = new ConcurrentLinkedQueue<>();
     private NumberAxis xAxis;
+    private StringProperty memString = new SimpleStringProperty();
+    private StringProperty storString = new SimpleStringProperty();
+
     private Label memUsage, storageUsage;
 
     private TableView table = new TableView();
@@ -104,9 +109,14 @@ public class GraphicalUserInterface extends Application{
 
         lineChart.getData().add(memSeries);
 
-        memUsage = new Label("0");
-        storageUsage = new Label("0");
-        infoBox.getChildren().add(lineChart);
+        memUsage = new Label();
+        memUsage.textProperty().bind(memString);
+        memString.set("Memory used: " + 0 + "/4096 MB");
+        storageUsage = new Label();
+        storageUsage.textProperty().bind(storString);
+        storString.set("Storage used: " + 0 + " MB");
+
+        infoBox.getChildren().addAll(lineChart, memUsage, storageUsage);
 
         cli = Main.cli;
 
@@ -268,12 +278,10 @@ public class GraphicalUserInterface extends Application{
     private class AddToQueue implements Runnable {
         public void run() {
             try {
-                // add a item of random data to queues todo: make this actually pull data
                 updateObserver();
-                memDataQueue.add(Math.random());
-                //memDataQueue.add()
-                //memUsage.setText();
-                //storageUsage.setText();
+
+                memDataQueue.add(Main.mmu.getMemFramesPercent());
+
                 Thread.sleep(200);
                 executor.execute(this);
 
@@ -309,6 +317,11 @@ public class GraphicalUserInterface extends Application{
         // update
         xAxis.setLowerBound(xSeriesData - MAX_DATA_POINTS);
         xAxis.setUpperBound(xSeriesData - 1);
+
+        int mgbUse = (Main.mmu.getMemFramesUsed()*4)/1024;
+        int storUse = (Main.mmu.getStorageFramesUsed()*4)/1024;
+        memString.set("Memory used: " + mgbUse + "/4096 MB");
+        storString.set("Storage used: " + storUse + " MB");
     }
 
     public void show(){
@@ -326,6 +339,7 @@ public class GraphicalUserInterface extends Application{
         }catch (Exception e){
             System.out.println(e.toString());
         }
+
 
 
     }
