@@ -51,6 +51,7 @@ public class CommandLine {
         String output;
 
         this.cli = new Scanner(line);
+
         String commandToken = cli.next();
 
         switch(commandToken.toUpperCase()){
@@ -162,8 +163,16 @@ public class CommandLine {
 
     private String doExe(){
         String str = "EXE\n";
-        Main.clock.execute = 10;
-        Main.gui.displayText("Running for 10 cycles");
+        int cycles = 2500;
+        if(cli.hasNextInt()){
+            try {
+                cycles = cli.nextInt();
+            }catch(NoSuchElementException e){
+                System.out.println("log: NoSuchElementException in doExe()");
+            }
+        }
+        Main.clock.execute = cycles;
+        Main.gui.displayText("Running for " + cycles + " cycles");
         return str;
     }
 
