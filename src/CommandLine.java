@@ -127,17 +127,26 @@ public class CommandLine {
         String str = "LOAD\n";
         try {
             String filename = cli.next();
+            String procName = filename;
+            boolean appended = false;   //on the advice of my counsel and pursuant to my rights under the 5th appendment,
+                                // I respectfully decline to answer that question
 
             try {
                 // if filename does not end in ".txt", append ".txt"
                 // please excuse the lame hack, sensei
                 if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
                     filename += LOAD_APPEND;
+                    appended = true;
                 }
             } catch (StringIndexOutOfBoundsException e) {
                 // filename is too short to contain ".txt"
                 // append ".txt"
                 filename += LOAD_APPEND;
+                appended = true;
+            }
+
+            if(!appended){
+                procName = procName.substring(0, procName.length() - 4);
             }
             Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
             System.out.println(filepath);
@@ -155,7 +164,7 @@ public class CommandLine {
                     }
 
                     int waitCycles = RNGesus.randInRange(cycleTime[0], cycleTime[1]);
-                    FileParser.parse(filepath, waitCycles);
+                    FileParser.parse(filepath, waitCycles, procName);
                     break;
                 case "JOB":
                     FileParser.parse(filepath);
