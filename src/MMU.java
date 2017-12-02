@@ -343,4 +343,13 @@ public class MMU {
     public void free(int pid){
         this.memory.releaseProcessData(pid);
     }
+
+    public void clearAll(){
+        for (int i = 0; i<MainMemory.NUM_FRAMES; i++){
+            int frameValue = this.memory.getFrameTable()[i];
+            if (frameValue > 0){
+                free(frameValue);
+            }
+        }
+    }
 }
