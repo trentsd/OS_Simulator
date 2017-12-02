@@ -181,12 +181,17 @@ public class MainMemory {
      * double[1] == Percent of storage being used
      * //TODO Maybe just return a string
      */
-    public double[] calcMemData() {
+    public double calcMemData() {
         double totalFrames = (double) NUM_FRAMES;
         double numFreeFrames = (double) freeFrames.size();
         double numOccFrames = totalFrames - numFreeFrames;
-        double memUsed = (numOccFrames / totalFrames) * 100;
+        double memUsed = (numOccFrames / totalFrames);
 
+
+        return memUsed;
+    }
+
+    public double calcStorageData(){
         Iterator throughStorage = this.storage.entrySet().iterator();
         double storageOcc = 0;
         while (throughStorage.hasNext()) {
@@ -194,8 +199,8 @@ public class MainMemory {
             int pSpace = (Integer) pair.getValue();
             storageOcc += (double) pSpace;
         }
-        double storageUsed = (storageOcc / STORAGE_SIZE) * 100;
+        double storageUsed = (storageOcc / STORAGE_SIZE);
 
-        return new double[]{memUsed, storageUsed};
+        return storageUsed;
     }
 }
