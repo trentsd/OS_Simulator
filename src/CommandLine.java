@@ -52,40 +52,46 @@ public class CommandLine {
 
         this.cli = new Scanner(line);
 
-        String commandToken = cli.next();
+        try {
+            String commandToken = cli.next();
 
-        switch(commandToken.toUpperCase()){
-            case "CD":
-                output = doCD();
-                break;
-            case "PROC":
-                output = doProc();
-                break;
-            case "MEM":
-                output = doMem();
-                break;
-            case "LOAD":
-                output = doLoad();
-                break;
-            case "EXE":
-                output = doExe();
-                break;
-            case "RESET":
-                output = doReset();
-                break;
-            case "EXIT":
-                output = doExit();
-                break;
-            case "DEBUG":
-                doDebug();
-                output = "debug";
-                break;
-            default:
-                Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.");
-                output = commandToken + " is not recognized as a command. Please try again.\n";
+            switch (commandToken.toUpperCase()) {
+                case "CD":
+                    output = doCD();
+                    break;
+                case "PROC":
+                    output = doProc();
+                    break;
+                case "MEM":
+                    output = doMem();
+                    break;
+                case "LOAD":
+                    output = doLoad();
+                    break;
+                case "EXE":
+                    output = doExe();
+                    break;
+                case "RESET":
+                    output = doReset();
+                    break;
+                case "EXIT":
+                    output = doExit();
+                    break;
+                case "DEBUG":
+                    doDebug();
+                    output = "debug";
+                    break;
+                default:
+                    Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.");
+                    output = commandToken + " is not recognized as a command. Please try again.\n";
+            }
+
+            return output;
+        }catch(NoSuchElementException e){
+            Main.gui.displayText("Error!");
         }
 
-        return output;
+        return "error";
     }
 
     private String doCD(){
@@ -119,45 +125,49 @@ public class CommandLine {
 
     private String doLoad(){
         String str = "LOAD\n";
-        String filename = cli.next();
-
         try {
-            // if filename does not end in ".txt", append ".txt"
-            // please excuse the lame hack, sensei
-            if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
+            String filename = cli.next();
+
+            try {
+                // if filename does not end in ".txt", append ".txt"
+                // please excuse the lame hack, sensei
+                if (!(filename.substring(filename.length() - 4, filename.length()).equals(LOAD_APPEND))) {
+                    filename += LOAD_APPEND;
+                }
+            } catch (StringIndexOutOfBoundsException e) {
+                // filename is too short to contain ".txt"
+                // append ".txt"
                 filename += LOAD_APPEND;
             }
-        } catch (StringIndexOutOfBoundsException e){
-            // filename is too short to contain ".txt"
-            // append ".txt"
-            filename += LOAD_APPEND;
-        }
-        Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
-        System.out.println(filepath);
-        String loadType = cli.next().toUpperCase();
-        switch(loadType){
-            case "PROG":
-                int[] cycleTime = new int[2];
-                for(int i = 0; i < cycleTime.length; i++){
-                    if(cli.hasNextInt()){
-                        cycleTime[i] = cli.nextInt();
+            Path filepath = Paths.get(this.jobFileDirectory.toString(), filename);
+            System.out.println(filepath);
+            String loadType = cli.next().toUpperCase();
+            switch (loadType) {
+                case "PROG":
+                    int[] cycleTime = new int[2];
+                    for (int i = 0; i < cycleTime.length; i++) {
+                        if (cli.hasNextInt()) {
+                            cycleTime[i] = cli.nextInt();
+                        } else {
+                            Main.gui.displayText("Malformed load command reached. 2 integers are required " +
+                                    "after program load commands.");
+                        }
                     }
-                    else{
-                        Main.gui.displayText("Malformed load command reached. 2 integers are required " +
-                                "after program load commands.");
-                    }
-                }
 
-                int waitCycles = RNGesus.randInRange(cycleTime[0], cycleTime[1]);
-                FileParser.parse(filepath, waitCycles);
-                break;
-            case "JOB":
-                FileParser.parse(filepath);
-                break;
-            default:
-                Main.gui.displayText("Malformed load command reached. Please state what filetype.");
+                    int waitCycles = RNGesus.randInRange(cycleTime[0], cycleTime[1]);
+                    FileParser.parse(filepath, waitCycles);
+                    break;
+                case "JOB":
+                    FileParser.parse(filepath);
+                    break;
+                default:
+                    Main.gui.displayText("Malformed load command reached. Please state what filetype.");
+            }
+            Main.gui.displayText("Loaded processes");
+        }catch (NoSuchElementException e){
+            System.out.println("log: error in doLoad()");
+            Main.gui.displayText("Malformed LOAD command. Please try again.");
         }
-        Main.gui.displayText("Loaded processes");
         return str;
     }
 
@@ -167,12 +177,13 @@ public class CommandLine {
         if(cli.hasNextInt()){
             try {
                 cycles = cli.nextInt();
+                Main.gui.displayText("Running for " + cycles + " cycles");
             }catch(NoSuchElementException e){
                 System.out.println("log: NoSuchElementException in doExe()");
             }
         }
         Main.clock.execute = cycles;
-        Main.gui.displayText("Running for " + cycles + " cycles");
+        Main.gui.displayText("Running...");
         return str;
     }
 
