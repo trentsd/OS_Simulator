@@ -120,6 +120,12 @@ public class ProcessControlBlock {
         else return false;
     }
 
+    public boolean waitForIO(){
+        blockTime--;
+        if(blockTime <= 0) return true;
+        else return false;
+    }
+
     public void spawn(){
         Main.clock.incubatingProcs.remove(this);
         Main.clock.newProcs.add(this);//spawn proc into new queue

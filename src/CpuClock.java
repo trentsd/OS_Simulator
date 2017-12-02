@@ -77,8 +77,9 @@ public class CpuClock extends Thread {
             if (turn1 < Q && proc1 != null) {
                 //process is still running
                 if (proc1.getCyclesRemaining() > 0) {
-                    //checkCommand(proc1);
-                    proc1.decCycles();
+                    proc1 = checkCommand(proc1);
+                    proc1 = randomIO(proc1);
+
                     turn1++;
                 } else { //process is done
                     System.out.println("log: process " + proc1.getName() + " finished.");
@@ -92,7 +93,7 @@ public class CpuClock extends Thread {
                     }
                     turn1 = 0;
                 }
-            } else {//turn over
+            } else {//turn over or nothing in thread
                 if (proc1 != null) {
                     readyProcs.add(proc1);
                     runningProcs.remove(proc1);
@@ -111,8 +112,8 @@ public class CpuClock extends Thread {
             if (turn2 < Q && proc2 != null) {
                 //process is still running
                 if (proc2.getCyclesRemaining() > 0) {
-                    //checkCommand(proc2);
-                    proc2.decCycles();
+                    proc2 = checkCommand(proc2);
+                    proc2 = randomIO(proc2);
                     turn2++;
                 } else { //process is done
                     System.out.println("log: process " + proc2.getName() + " finished.");
@@ -126,7 +127,7 @@ public class CpuClock extends Thread {
                     }
                     turn2 = 0;
                 }
-            } else {//turn over
+            } else {//turn over or nothing in thread
                 if (proc2 != null) {
                     readyProcs.add(proc2);
                     runningProcs.remove(proc2);
@@ -145,8 +146,8 @@ public class CpuClock extends Thread {
             if (turn3 < Q && proc3 != null) {
                 //process is still running
                 if (proc3.getCyclesRemaining() > 0) {
-                    //checkCommand(proc3);
-                    proc3.decCycles();
+                    proc3 = checkCommand(proc3);
+                    proc3 = randomIO(proc3);
                     turn3++;
                 } else { //process is done
                     System.out.println("log: process " + proc3.getName() + " finished.");
@@ -160,7 +161,7 @@ public class CpuClock extends Thread {
                     }
                     turn3 = 0;
                 }
-            } else {//turn over
+            } else {//turn over or nothing in thread
                 if (proc3 != null) {
                     readyProcs.add(proc3);
                     runningProcs.remove(proc3);
@@ -179,8 +180,8 @@ public class CpuClock extends Thread {
             if (turn4 < Q && proc4 != null) {
                 //process is still running
                 if (proc4.getCyclesRemaining() > 0) {
-                    //checkCommand(proc4);
-                    proc4.decCycles();
+                    proc4 = checkCommand(proc4);
+                    proc4 = randomIO(proc4);
                     turn4++;
                 } else { //process is done
                     System.out.println("log: process " + proc4.getName() + " finished.");
@@ -194,7 +195,7 @@ public class CpuClock extends Thread {
                     }
                     turn4 = 0;
                 }
-            } else {//turn over
+            } else {//turn over or nothing in thread
                 if (proc4 != null) {
                     readyProcs.add(proc4);
                     runningProcs.remove(proc4);
@@ -209,9 +210,7 @@ public class CpuClock extends Thread {
                 turn4 = 0;
             }
 
-
-            //randomIO();
-
+            updateWaiting();
             updateList();
 
             execute--;
@@ -351,12 +350,11 @@ public class CpuClock extends Thread {
 
         if (proc.getCyclesRemaining() > 1) {//process has cycles remaining
             proc = checkCommand(proc);
-            //proc.decCycles();
+            proc = randomIO(proc);
 
         }
         else {//process is finished
             proc = checkCommand(proc);
-            //proc.decCycles();
 
             proc.state = States.EXIT;
             runningProcs.remove(proc);
@@ -387,6 +385,16 @@ public class CpuClock extends Thread {
         }
     }
 
+    private void updateWaiting(){
+        for(int i = 0; i < waitingProcs.size(); i++){
+            ProcessControlBlock temp = (ProcessControlBlock)waitingProcs.get(i);
+            if(temp.waitForIO()){
+                waitingProcs.remove(temp);
+                readyProcs.add(temp);
+            }
+        }
+    }
+
     private void updateList() {
         allProcs.clear();
 
@@ -401,16 +409,20 @@ public class CpuClock extends Thread {
         allProcs.remove(Collections.singleton(null));
     }
 
-    private void randomIO(ProcessControlBlock proc) {
+    private ProcessControlBlock randomIO(ProcessControlBlock proc) {
         int cycles;
+        if(proc == null)
+            return null;
         if (Math.random() * 100 < IO_CHANCE) {
             cycles = RNGesus.randInRange(25, 50);
-            System.out.println("log: IO occurred taking " + cycles + " cycles.");
+            System.out.println("log: external IO occured in proc " + proc.getPid() + " of length " + cycles + ". Blocking.");
             proc.state = States.WAIT;
             proc.blockTime = cycles;
-            return;
+            waitingProcs.add(proc);
+            runningProcs.remove(proc);
+            return null;
         } else
-            return;
+            return proc;
     }
 
     private ProcessControlBlock checkCommand(ProcessControlBlock proc) {
@@ -421,15 +433,17 @@ public class CpuClock extends Thread {
                 return proc;
 
             case Commands.IO:
+                System.out.println("log: proc " + proc.getPid() + " encountered IO");
                 proc.decCycles();
                 proc.state = States.WAIT;
-                proc.blockTime = 25 + (int) (Math.random() * ((50 - 25) + 1));
+                proc.blockTime = RNGesus.randInRange(25, 50);
                 waitingProcs.add(proc);
                 runningProcs.remove(proc);
                 contProc = false;
                 return null;
 
             case Commands.YIELD:
+                System.out.println("log: proc " + proc.getPid() + " yielding");
                 try {
                     proc.decCycles();
                     readyProcs.put(proc);
@@ -441,7 +455,9 @@ public class CpuClock extends Thread {
                 return null;
 
             case Commands.OUT:
+                System.out.println("log: proc " + proc.getPid() + " outputting");
                 proc.decCycles();
+                Main.gui.displayText(proc.getNextOut());
                 return proc;
 
             default:
