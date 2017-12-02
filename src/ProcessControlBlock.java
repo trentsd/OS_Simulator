@@ -46,12 +46,13 @@ public class ProcessControlBlock {
         this.cyclesRequired = commandQueue.size();
         this.outQ = outQ;
         this.cyclesRemaining = this.cyclesRequired;
+        this.incubateTime = incubateTime;
 
         this.pid = Main.pid; //evil horrible global state
         Main.pid++; //no god please don't do this programmer
 
         //Main.clock.incubatingProcs.add(this);
-        if(incubateTime > 0)
+        if(this.incubateTime > 0)
             Main.clock.incubatingProcs.add(this);
         else
             spawn();
