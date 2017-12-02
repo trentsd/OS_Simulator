@@ -40,6 +40,8 @@ public class MMU {
         if ((mem % 4) != 0) {
             numPages++;
         }
+
+        //OLD IMPLEMENTATION, LOADS INTO ALL AVAILABLE PAGES ON MEMORY
         PageTable pTable = new PageTable(numPages);
 
         if (this.memory.getFreeFrames().size() < numPages) {
@@ -65,6 +67,7 @@ public class MMU {
                 return 0;
             }
         } else {
+
             int freeFrame = -1;
             for (int pNum = 0; pNum < numPages; pNum++) {
                 freeFrame = this.memory.getFreeFrames().poll();
@@ -72,6 +75,8 @@ public class MMU {
                 pTable.setEntryAsValid(pNum, true);
                 this.memory.getFrameTable()[freeFrame] = pid;
             }
+
+            this.memory.getStorage().put(pid, 0);
             this.memory.getPageTables().put(pid, pTable);
             return 1;
         }
@@ -151,7 +156,7 @@ public class MMU {
         this.memory.getPageTables().get(victimPid).setEntryAsValid(victimPage, false);
         this.memory.getPageTables().get(victimPid).setShared(victimPage, false);
         this.memory.getPageTables().get(victimPid).resetReference(victimPage);
-        //this.memory.getStorage().replace(victimPid, this.memory.getStorage().get(victimPid) + 1);
+        this.memory.getStorage().replace(victimPid, this.memory.getStorage().get(victimPid) + 1);
 
         return frame;
     }
@@ -268,7 +273,7 @@ public class MMU {
         return new long[]{phys, frame};
     }
 
-    public long requestAddressAddress(int[] logicalAddress) {
+    public long requestAddress(int[] logicalAddress) {
         long tlbHitMis = this.tlb.get(logicalAddress);
         if (tlbHitMis > 0) {
             System.out.println("TLB HIT!! ----- " + tlbHitMis);
@@ -299,20 +304,46 @@ public class MMU {
      * @return
      */
     public int fork(int pid, int ppid, int parentMemory) {
+        int numPages = parentMemory / 4;
+        if ((parentMemory % 4) != 0) {
+            numPages++;
+        }
+        numPages++;
         System.out.println("Creating child " + pid + " to " + ppid);
+
         int[] victims = calcVictimPage();
         int frame = this.memory.getPageTables().get(victims[0]).getFrame(victims[1]);
-        int page = this.memory.getPageTables().get(ppid).length();
         this.memory.getPageTables().get(ppid).addSharedSpace(frame);
-        performSwap(victims[0], victims[1], ppid, page);
+        performSwap(victims[0], victims[1], ppid, numPages);
         this.memory.getStorage().replace(ppid, this.memory.getStorage().get(ppid) + 1);
 
         int success = loadProc(pid, parentMemory + 4);
-        this.memory.getPageTables().get(pid).setFrame(page, frame);
-        this.memory.getPageTables().get(pid).setShared(page, true);
+        this.memory.getPageTables().get(pid).setFrame(numPages, frame);
+        this.memory.getPageTables().get(pid).setShared(numPages, true);
         return success;
     }
 
+    public int getMemFramesUsed(){
+        int totalFrames =  MainMemory.NUM_FRAMES;
+        int numFreeFrames = this.memory.getFreeFrames().size();
+        int numOccFrames = totalFrames - numFreeFrames;
+        return numOccFrames;
+    }
+
+    public double getMemFramesPercent(){
+        return this.memory.calcMemData();
+    }
+
+    public int getStorageFramesUsed(){
+        Iterator throughStorage = this.memory.getStorage().entrySet().iterator();
+        int storageOcc = 0;
+        while (throughStorage.hasNext()) {
+            Map.Entry pair = (Map.Entry) throughStorage.next();
+            int pSpace = (Integer) pair.getValue();
+            storageOcc += pSpace;
+        }
+        return storageOcc;
+    }
 
     public static void main(String[] args) {
         MMU mmu = new MMU();
@@ -328,16 +359,38 @@ public class MMU {
         }
 
         //PRINTING MEMORY AND STORAGE USAGE
-        double[] stats = mmu.memory.calcMemData();
-        System.out.println("\nMemory Used: " + stats[0] + " Storage Used: " + stats[1] + "%\n");
+        int memFrames = mmu.getMemFramesUsed();
+        double memPercent = mmu.getMemFramesPercent();
+        int storeUsed = mmu.getStorageFramesUsed();
+
+        System.out.println("\nMemory Frames Used: " + memFrames + " Mem Percent: " + memPercent + " Store Frames Used: " + storeUsed + "\n");
 
 
         //TESTING REQUEST ACCESSING AND PAGING/SWAPPING
-        for (int i = 1; i < 20; i++) {
+        /*for (int i = 1; i < 20; i++) {
             int[] logAddr = {i, 0, i - 1, 0};
-            long physical = mmu.requestAddressAddress(logAddr);
+            long physical = mmu.requestAddress(logAddr);
             System.out.println("Physical: " + physical);
-        }
+        }*/
+
+        //TESTING REQUEST ACCESSING AND PAGING/SWAPPING
+        int[] logAddr0 = {20, 0, 0, 0};
+        int[] logAddr1 = {20, 0, 1, 0};
+        int[] logAddr2 = {20, 0, 2, 0};
+        int[] logAddr3 = {21, 0, 0, 0};
+        int[] logAddr4 = {4, 0, 0, 0};
+        long physical0 = mmu.requestAddress(logAddr0);
+        System.out.println("Physical: " + physical0);
+        physical0 = mmu.requestAddress(logAddr0);
+        System.out.println("Physical: " + physical0);
+        physical0 = mmu.requestAddress(logAddr0);
+        System.out.println("Physical: " + physical0);
+        long physical1 = mmu.requestAddress(logAddr1);
+        System.out.println("Physical: " + physical1);
+        long physical2 = mmu.requestAddress(logAddr2);
+        System.out.println("Physical: " + physical2);
+        long physical3 = mmu.requestAddress(logAddr3);
+        System.out.println("Physical: " + physical3);
 
         //PRINTING CONTENTS OF MAIN MEMORY
         System.out.println("\nMAIN MEMORY");
@@ -349,11 +402,11 @@ public class MMU {
         //mmu.memory.releaseProcessData(1);
         //mmu.memory.releaseProcessData(6);
 
-        for (int i = 0; i < 64; i++) {
+        /*for (int i = 0; i < 64; i++) {
             int[] logAddr = {64, 0, i, 0};
-            long phys = mmu.requestAddressAddress(logAddr);
+            long phys = mmu.requestAddress(logAddr);
             System.out.println("Physical: " + phys);
-        }
+        }*/
 
         //PRINTING CONTENTS OF MAIN MEMORY
         System.out.println("\nMAIN MEMORY");
