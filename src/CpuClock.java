@@ -18,7 +18,6 @@ public class CpuClock extends Thread {
     public final int ROUND_ROBIN = 0, FCFS = 1, SRTF = 2;
     protected int scheduler = ROUND_ROBIN;
     private final int IO_CHANCE = 1;
-    private boolean contProc;
     public int execute = 0;
 
     public CpuClock(BlockingQueue q) {
@@ -31,6 +30,7 @@ public class CpuClock extends Thread {
     }
 
     private void schedule() {
+        //set scheduler
         if (scheduler == ROUND_ROBIN) {
             try {
                 roundRobin();
@@ -58,18 +58,19 @@ public class CpuClock extends Thread {
 
     private synchronized void roundRobin() throws InterruptedException {
         final int Q = 10;//time each process gets per turn
-        //ProcessControlBlock proc1 = null, proc2 = null, proc3 = null, proc4 = null;
         int turn1 = 0, turn2 = 0, turn3 = 0, turn4 = 0;
         execute = 0;
 
         while (scheduler == ROUND_ROBIN) {
 
+            //wait for the user to allow execution
             if (execute <= 0) {
                 updateList();
                 Thread.sleep(100);
                 continue;
             }
 
+            //decrement the timer on procs waiting to spawn
             incubateProcs();
 
 
@@ -77,17 +78,17 @@ public class CpuClock extends Thread {
             if (turn1 < Q && proc1 != null) {
                 //process is still running
                 if (proc1.getCyclesRemaining() > 0) {
-                    proc1 = checkCommand(proc1);
-                    proc1 = randomIO(proc1);
-
+                    proc1 = checkCommand(proc1);//do command
+                    proc1 = randomIO(proc1);//check for random external IO
                     turn1++;
-                } else { //process is done
+                }
+                else { //process is done
                     System.out.println("log: process " + proc1.getName() + " finished.");
                     runningProcs.remove(proc1);
                     proc1.state = States.EXIT;
                     Main.mmu.free(proc1.getPid());
-                    proc1 = (ProcessControlBlock) readyProcs.poll();
-                    if (proc1 != null) {
+                    proc1 = (ProcessControlBlock) readyProcs.poll();//pull next proc into running
+                    if (proc1 != null) {//make sure a proc was pulled
                         runningProcs.add(proc1);
                         readyProcs.remove(proc1);
                         proc1.state = States.RUN;
@@ -95,12 +96,12 @@ public class CpuClock extends Thread {
                     turn1 = 0;
                 }
             } else {//turn over or nothing in thread
-                if (proc1 != null) {
+                if (proc1 != null) {//if it is a completed turn
                     readyProcs.add(proc1);
                     runningProcs.remove(proc1);
                     proc1.state = States.READY;
                 }
-                proc1 = (ProcessControlBlock) readyProcs.poll();
+                proc1 = (ProcessControlBlock) readyProcs.poll();//try to pull new proc into running
                 if (proc1 != null) {
                     runningProcs.add(proc1);
                     readyProcs.remove(proc1);
@@ -214,10 +215,10 @@ public class CpuClock extends Thread {
                 turn4 = 0;
             }
 
-            updateWaiting();
-            updateList();
+            updateWaiting();//update timer on threads waiting on IO
+            updateList();//update current procs list
 
-            execute--;
+            execute--;//decrement cycles ran
 
         }
 
@@ -226,74 +227,16 @@ public class CpuClock extends Thread {
     }
 
 
-    private void firstCome() throws InterruptedException { //OUTDATED FOR REFERENCE ONLY
-        execute = 0;
-        ProcessControlBlock proc;
-
-        while (execute <= 0) {
-            Thread.sleep(500);
-        }
-        incubateProcs();
-        proc = (ProcessControlBlock) readyProcs.poll();
-        runningProcs.add(proc);
-        proc.state = States.RUN;
-
-        while (scheduler == FCFS) {
-
-            while (execute > 0) {
-                incubateProcs();
-
-                if (proc == null) {//no process is loaded
-                    execute--;
-                    try {
-                        proc = (ProcessControlBlock) readyProcs.poll();
-                        runningProcs.add(proc);
-                        proc.state = States.RUN;
-                    } catch (NullPointerException e) {
-                        continue;
-                    }
-
-                }
-
-                if (proc.getCyclesRemaining() > 0) {
-                    //checkCommand
-                    proc.decCycles();
-                    execute--;
-                } else {
-                    proc.state = States.EXIT;
-                    Main.mmu.free(proc.getPid());
-                    runningProcs.remove(proc);
-                    System.out.println("log: " + proc.getName() + " finished.");
-
-                    proc = (ProcessControlBlock) readyProcs.poll();
-                    if (proc == null) {
-                        execute = 0;
-                        break;
-                    }
-                    runningProcs.add(proc);
-                    proc.state = States.RUN;
-
-                    updateList();
-                }
-
-            }
-            Thread.sleep(2);//prevent high cpu usage
-
-            updateList();
-
-        }
-        schedule();
-    }//FOR REFERENCE ONLY--OUTDATED
-
     private void threadedFirstCome() throws InterruptedException {
         execute = 0;
 
-        while (execute <= 0) {
+        while (execute <= 0) {//wait for the user to allow execution
             updateList();
             Thread.sleep(500);
         }
-        incubateProcs();
+        incubateProcs();//update procs waiting to spawn
 
+        //intial attempt at loading procs into cpu
         proc1 = (ProcessControlBlock) readyProcs.poll();
         if(proc1 != null){
             runningProcs.add(proc1);
@@ -321,6 +264,7 @@ public class CpuClock extends Thread {
 
         while (scheduler == FCFS) {
 
+            //execute for amount of cycles user requested
             while (execute > 0) {
                 incubateProcs();
 
@@ -329,12 +273,15 @@ public class CpuClock extends Thread {
                 proc3 = fcfsHelper(proc3);
                 proc4 = fcfsHelper(proc4);
 
+                updateWaiting();
+
                 execute--;
 
             }
             Thread.sleep(2);//prevent high cpu usage
 
             updateList();
+
 
         }
         schedule();
@@ -343,7 +290,7 @@ public class CpuClock extends Thread {
     private ProcessControlBlock fcfsHelper(ProcessControlBlock proc) {
         if (proc == null) {//no process is loaded
 
-            proc = (ProcessControlBlock) readyProcs.poll();
+            proc = (ProcessControlBlock) readyProcs.poll();//attempt to pull a proc onto the cpu
             if(proc != null) {
                 runningProcs.add(proc);
                 proc.state = States.RUN;
@@ -359,20 +306,21 @@ public class CpuClock extends Thread {
 
         }
         else {//process is finished
-            proc = checkCommand(proc);
+            proc = checkCommand(proc);//execute last command
 
+            //wrap up proc
             proc.state = States.EXIT;
             Main.mmu.free(proc.getPid());
             runningProcs.remove(proc);
             System.out.println("log: " + proc.getName() + " finished.");
 
+            //attempt to pull in next proc to cpu
             proc = (ProcessControlBlock) readyProcs.poll();
             if (proc == null) {
                 return null;
             }
             runningProcs.add(proc);
             proc.state = States.RUN;
-            //execute++;
             updateList();
         }
 
@@ -382,10 +330,9 @@ public class CpuClock extends Thread {
 
     private void incubateProcs() {
         for (int i = 0; i < incubatingProcs.size(); i++) {
-            //(ProcessControlBlock)(incubatingProcs.get(i)).incubateTime -= 1;
-            // I DONT KNOW WHY THIS DOESNT WORK, ITS BEING CAST SO I HAD TO USE THIS STUPID TEMP VAR
+
             ProcessControlBlock temp = (ProcessControlBlock) incubatingProcs.get(i);
-            if (temp.incubate()) {
+            if (temp.incubate()) {//check if it is time for proc to spawn
                 temp.spawn();
             }
         }
@@ -394,21 +341,20 @@ public class CpuClock extends Thread {
     private void updateWaiting(){
         for(int i = 0; i < waitingProcs.size(); i++){
             ProcessControlBlock temp = (ProcessControlBlock)waitingProcs.get(i);
-            if(temp.waitForIO()){
+            if(temp.waitForIO()){//check if IO is done
                 waitingProcs.remove(temp);
                 readyProcs.add(temp);
             }
         }
     }
 
-    private void updateList() {
+    private void updateList() { //update list of all processes
         allProcs.clear();
 
         try {
             allProcs.addAll(runningProcs);
-        } catch (NullPointerException e) {
-            //System.out.println(e.toString());
-        }
+        } catch (NullPointerException e) { }
+
         allProcs.addAll(waitingProcs);
         allProcs.addAll(newProcs);
         allProcs.addAll(readyProcs);
@@ -422,6 +368,7 @@ public class CpuClock extends Thread {
         if (Math.random() * 100 < IO_CHANCE) {
             cycles = RNGesus.randInRange(25, 50);
             System.out.println("log: external IO occured in proc " + proc.getPid() + " of length " + cycles + ". Blocking.");
+            //put process in blocking state
             proc.state = States.WAIT;
             proc.blockTime = cycles;
             waitingProcs.add(proc);
@@ -435,7 +382,6 @@ public class CpuClock extends Thread {
         switch (proc.getNextCommand()) {
             case Commands.CALCULATE:
                 proc.decCycles();
-                contProc = true;
                 return proc;
 
             case Commands.IO:
@@ -447,7 +393,6 @@ public class CpuClock extends Thread {
                 System.out.println("log: proc " + proc.getPid() + " encountered internal IO of " + cycles + " cycles");
                 waitingProcs.add(proc);
                 runningProcs.remove(proc);
-                contProc = false;
                 return null;
 
             case Commands.YIELD:
@@ -459,7 +404,6 @@ public class CpuClock extends Thread {
                     e.printStackTrace();
                 }
                 runningProcs.remove(proc);
-                contProc = false;
                 return null;
 
             case Commands.OUT:
@@ -475,6 +419,7 @@ public class CpuClock extends Thread {
     }
 
     public void reset() {
+        //interupt/ stop running cycles
         execute = 0;
         try {
             Thread.sleep(20);
@@ -482,6 +427,14 @@ public class CpuClock extends Thread {
             e.printStackTrace();
         }
         execute = 0;
+
+        //free memory
+        for(int i = 0; i < allProcs.size(); i++){
+            ProcessControlBlock temp = (ProcessControlBlock)allProcs.poll();
+            Main.mmu.free(temp.getPid());
+        }
+
+        //dump processes from queues/ lists
         proc1 = null;
         proc2 = null;
         proc3 = null;

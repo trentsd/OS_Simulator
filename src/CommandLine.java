@@ -116,10 +116,11 @@ public class CommandLine {
 
     private String doMem(){
         String str = "MEM\n";
-        int mgbUse = (Main.mmu.getMemFramesUsed()*4)/1024;
+        int kbUse = (Main.mmu.getMemFramesUsed()*4);
+        int mgbUse = kbUse/1024;
         int storUse = (Main.mmu.getStorageFramesUsed()*4)/1024;
 
-        Main.gui.displayText("Memory used: " + mgbUse + "/4096 MB");
+        Main.gui.displayText("Memory used: " + mgbUse + "/4096 MB(" + kbUse + " kb)");
         Main.gui.displayText("Storage used: " + storUse + " MB");
         return str;
     }
