@@ -114,6 +114,8 @@ public class FileParser {
                         Main.gui.displayText(outText);
                 }
             }
+
+            new ProcessControlBlock(commandQueue, "abc", memReq, waitCycle);
         } catch(IOException e){
             e.printStackTrace();
             System.out.println("Exception caught in parseProgram()");
