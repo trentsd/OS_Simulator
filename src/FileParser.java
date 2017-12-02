@@ -3,6 +3,8 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FileParser {
 
@@ -102,12 +104,16 @@ public class FileParser {
                         break;
                     case "OUT":
                         in.useDelimiter("\"");
-                        try {
-                            String outText = in.next();
+                        Pattern p = Pattern.compile("\"([^\"]*)\"");
+                        Matcher m = p.matcher(line);
+                        if(m.find()) {
+                            System.out.println(m.group(1));
+                            String outText = m.group(1);
                             outQ.add(outText);
                             commandQueue.add(Commands.OUT);
-                        } catch(NoSuchElementException e){
-                            Main.gui.displayText("Malformed OUT command reached. Please use correct syntax.");
+                        }
+                        else{
+                            Main.gui.displayText("Malformed OUT command reached. Please check syntax");
                         }
                         break;
                     default:
