@@ -164,12 +164,12 @@ public class MainMemory {
      * @param pid The pid of the process to be released
      */
     public void releaseProcessData(int pid) {
-        for (int pNum = 0; pNum < this.pageTables.get(pid).length(); pNum++) {
-            if (!(this.pageTables.get(pid).isShared(pNum)) && this.pageTables.get(pid).isValid(pNum)) {
-                this.releaseFrame(this.pageTables.get(pid).getFrame(pNum));
-                this.pageTables.get(pid).setEntryAsValid(pNum, false);
-                this.storage.remove(pid);
-            }
+        PageTable pTable = this.pageTables.get(pid);
+        Iterator through = pTable.valids.iterator();
+        while (through.hasNext()){
+            int page = (int) through.next();
+            releaseFrame(pTable.getFrame(page));
+            pTable.valids.remove(page);
         }
     }
 

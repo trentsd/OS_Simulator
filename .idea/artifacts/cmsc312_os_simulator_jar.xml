@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="cmsc312_os_simulator:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/cmsc312_os_simulator_jar</output-path>
+    <root id="archive" name="cmsc312_os_simulator.jar">
+      <element id="module-output" name="cmsc312_os_simulator" />
+    </root>
+  </artifact>
+</component>
