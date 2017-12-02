@@ -39,7 +39,6 @@ public class CpuClock extends Thread {
             }
         } else if (scheduler == FCFS) {
             try {
-                //firstCome();
                 threadedFirstCome();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -291,30 +290,30 @@ public class CpuClock extends Thread {
         }
         incubateProcs();
 
-        try {
-            proc1 = (ProcessControlBlock) readyProcs.poll();
+        proc1 = (ProcessControlBlock) readyProcs.poll();
+        if(proc1 != null){
             runningProcs.add(proc1);
             proc1.state = States.RUN;
-        } catch (NullPointerException e) {
         }
-        try {
-            proc2 = (ProcessControlBlock) readyProcs.poll();
+
+        proc2 = (ProcessControlBlock) readyProcs.poll();
+        if(proc2 !=null) {
             runningProcs.add(proc2);
             proc2.state = States.RUN;
-        } catch (NullPointerException e) {
         }
-        try {
-            proc3 = (ProcessControlBlock) readyProcs.poll();
+
+        proc3 = (ProcessControlBlock) readyProcs.poll();
+        if(proc3 != null) {
             runningProcs.add(proc3);
             proc3.state = States.RUN;
-        } catch (NullPointerException e) {
         }
-        try {
-            proc4 = (ProcessControlBlock) readyProcs.poll();
+
+        proc4 = (ProcessControlBlock) readyProcs.poll();
+        if(proc4 != null) {
             runningProcs.add(proc4);
             proc4.state = States.RUN;
-        } catch (NullPointerException e) {
         }
+
 
         while (scheduler == FCFS) {
 
@@ -339,24 +338,25 @@ public class CpuClock extends Thread {
 
     private ProcessControlBlock fcfsHelper(ProcessControlBlock proc) {
         if (proc == null) {//no process is loaded
-            try {
-                proc = (ProcessControlBlock) readyProcs.poll();
+
+            proc = (ProcessControlBlock) readyProcs.poll();
+            if(proc != null) {
                 runningProcs.add(proc);
                 proc.state = States.RUN;
-            } catch (NullPointerException e) {
-                return null;
             }
+            else
+                return null;
 
         }
 
         if (proc.getCyclesRemaining() > 1) {//process has cycles remaining
-            //checkCommand
-            proc.decCycles();
+            proc = checkCommand(proc);
+            //proc.decCycles();
 
         }
         else {//process is finished
-            //checkCommand
-            proc.decCycles();
+            proc = checkCommand(proc);
+            //proc.decCycles();
 
             proc.state = States.EXIT;
             runningProcs.remove(proc);
@@ -413,12 +413,13 @@ public class CpuClock extends Thread {
             return;
     }
 
-    private void checkCommand(ProcessControlBlock proc) {
+    private ProcessControlBlock checkCommand(ProcessControlBlock proc) {
         switch (proc.getNextCommand()) {
             case Commands.CALCULATE:
                 proc.decCycles();
                 contProc = true;
-                break;
+                return proc;
+
             case Commands.IO:
                 proc.decCycles();
                 proc.state = States.WAIT;
@@ -426,7 +427,8 @@ public class CpuClock extends Thread {
                 waitingProcs.add(proc);
                 runningProcs.remove(proc);
                 contProc = false;
-                break;
+                return null;
+
             case Commands.YIELD:
                 try {
                     proc.decCycles();
@@ -436,13 +438,16 @@ public class CpuClock extends Thread {
                 }
                 runningProcs.remove(proc);
                 contProc = false;
-                break;
+                return null;
+
             case Commands.OUT:
                 proc.decCycles();
-                break;
+                return proc;
+
             default:
                 System.out.println("log: Command queue empty.");
-                break;
+                return null;
+
         }
     }
 
