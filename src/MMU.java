@@ -15,6 +15,7 @@ public class MMU {
     private final static int MAX_P2 = 1023;
     private final static int MAX_OFFSET = 4095;
 
+
     //private Registers registers; //MIGHT JUST BE FIELDS IN CPU
     private TLB tlb;
     //private Cache cache;
@@ -88,7 +89,8 @@ public class MMU {
     public int loadPageFromStorage(int pid, int requestPage) {
         int frame = -1;
         if (this.memory.getFreeFrames().size() == 0) {
-            frame = swapPage(pid, requestPage);
+            int[] victims = calcVictimPage();
+            frame = performSwap(victims[0], victims[1], pid, requestPage);
         } else {
             frame = this.memory.getFreeFrames().poll();
             this.memory.getPageTables().get(pid).setFrame(requestPage, frame);
@@ -101,14 +103,12 @@ public class MMU {
     }
 
     /**
-     * Selects a victim page and swaps with request page into storage, giving up its frame to the request page
+     * Selects a victim page
      *
-     * @param pid
-     * @param requestPage
      * @return int[0] == pid of process that owns victim page
      * int[1] == victim page
      */
-    public int swapPage(int pid, int requestPage) {
+    public int[] calcVictimPage() {
         int victimPid = -1;
         int victimPage = -50;
         int globalNumRef = Integer.MAX_VALUE;
@@ -126,22 +126,36 @@ public class MMU {
                 globalNumRef = victimAndNumRef[1];
             }
         }
+        return new int[]{victimPid, victimPage};
+    }
 
+    /**
+     * Swaps with requested page with victim page
+     *
+     * @param victimPid
+     * @param victimPage
+     * @param pid
+     * @param requestPage
+     * @return
+     */
+    public int performSwap(int victimPid, int victimPage, int pid, int requestPage) {
         int frame = this.memory.getPageTables().get(victimPid).getFrame(victimPage);
-
         //Set values for requested page
         this.memory.getPageTables().get(pid).setFrame(requestPage, frame);
         this.memory.getPageTables().get(pid).setEntryAsValid(requestPage, true);
         this.memory.getPageTables().get(pid).resetReference(requestPage);
         this.memory.getFrameTable()[frame] = pid;
+        this.memory.getStorage().replace(pid, this.memory.getStorage().get(pid) - 1);
 
         //Set values for victim page
         this.memory.getPageTables().get(victimPid).setEntryAsValid(victimPage, false);
         this.memory.getPageTables().get(victimPid).setShared(victimPage, false);
         this.memory.getPageTables().get(victimPid).resetReference(victimPage);
+        //this.memory.getStorage().replace(victimPid, this.memory.getStorage().get(victimPid) + 1);
 
         return frame;
     }
+
 
     /**
      * Creates a valid virtual address from the range of 0 to MAX_VIRT_ADDRESS
@@ -276,6 +290,30 @@ public class MMU {
         }
     }
 
+    /**
+     * Creates child with shared memory space to parent, adds this shared space to end of parent page table
+     *
+     * @param pid
+     * @param ppid
+     * @param parentMemory
+     * @return
+     */
+    public int fork(int pid, int ppid, int parentMemory) {
+        System.out.println("Creating child " + pid + " to " + ppid);
+        int[] victims = calcVictimPage();
+        int frame = this.memory.getPageTables().get(victims[0]).getFrame(victims[1]);
+        int page = this.memory.getPageTables().get(ppid).length();
+        this.memory.getPageTables().get(ppid).addSharedSpace(frame);
+        performSwap(victims[0], victims[1], ppid, page);
+        this.memory.getStorage().replace(ppid, this.memory.getStorage().get(ppid) + 1);
+
+        int success = loadProc(pid, parentMemory + 4);
+        this.memory.getPageTables().get(pid).setFrame(page, frame);
+        this.memory.getPageTables().get(pid).setShared(page, true);
+        return success;
+    }
+
+
     public static void main(String[] args) {
         MMU mmu = new MMU();
 
@@ -308,22 +346,14 @@ public class MMU {
         }
 
         //Release data from a few processes
-        mmu.memory.releaseProcessData(1);
-        mmu.memory.releaseProcessData(6);
+        //mmu.memory.releaseProcessData(1);
+        //mmu.memory.releaseProcessData(6);
 
         for (int i = 0; i < 64; i++) {
             int[] logAddr = {64, 0, i, 0};
             long phys = mmu.requestAddressAddress(logAddr);
             System.out.println("Physical: " + phys);
         }
-
-        //PRINTING CONTENTS OF MAIN MEMORY
-        System.out.println("\nMAIN MEMORY");
-        for (int i = 0; i < mmu.memory.getFrameTable().length; i++) {
-            System.out.println(i + " ---- [" + mmu.memory.getFrameTable()[i] + "]");
-        }
-
-        mmu.memory.releaseProcessData(64);
 
         //PRINTING CONTENTS OF MAIN MEMORY
         System.out.println("\nMAIN MEMORY");

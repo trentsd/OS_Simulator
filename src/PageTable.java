@@ -1,8 +1,11 @@
-public class PageTable {
+public class PageTable implements Cloneable{
     /**
      * The page table for a process
      */
     private TableEntry[] pTable;
+    /**
+     * Whether or not this pTable has any pages in memory, check this after removing a page
+     */
 
     public PageTable(int numPages){
         this.pTable = new TableEntry[numPages];
@@ -75,6 +78,15 @@ public class PageTable {
         this.pTable[pNum].reference = 0;
     }
 
+    public TableEntry copyEntry(int pNum){
+        TableEntry copy = new TableEntry();
+        copy.frame = this.pTable[pNum].frame;
+        copy.validBit = this.pTable[pNum].validBit;
+        copy.shared = this.pTable[pNum].shared;
+        copy.reference = this.pTable[pNum].reference;
+        return copy;
+    }
+
     /**
      * Returns whether or not this entry in the page table is valid
      */
@@ -83,9 +95,29 @@ public class PageTable {
     }
 
     /**
-     * Checks to see if the frame referenced by this page table entry is being shared
+     * Creates an identical pTable with one extra entry that is set to shared
+     * @param frame the value that will go in this entry, calculated by calcVictim in MMU
      */
+    public void addSharedSpace(int frame){
+        PageTable clone = new PageTable(this.length()+1);
+        for (int pNum=0; pNum<this.length(); pNum++){
+            clone.pTable[pNum] = this.copyEntry(pNum);
+        }
+        TableEntry sharedSpace = new TableEntry(true);
+        sharedSpace.frame = frame;
+        clone.pTable[this.length()] = sharedSpace;
 
+        this.pTable = clone.pTable;
+    }
+
+    public PageTable copy() {
+        int numPages = this.length();
+        PageTable clone = new PageTable(numPages);
+        for (int pNum = 0; pNum<numPages; pNum++){
+            clone.pTable[pNum] = this.copyEntry(pNum);
+        }
+        return clone;
+    }
 
     class TableEntry{
         boolean validBit;
@@ -97,6 +129,13 @@ public class PageTable {
             this.frame = -1;
             this.validBit = false;
             this.shared = false;
+            this.reference = 0;
+        }
+
+        public TableEntry(boolean shared){
+            this.frame = -1;
+            this.validBit = false;
+            this.shared = true;
             this.reference = 0;
         }
 
