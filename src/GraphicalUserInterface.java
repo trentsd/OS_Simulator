@@ -352,7 +352,13 @@ public class GraphicalUserInterface extends Application{
     }
 
     public void displayText(String output){
-        display.appendText("\n" + output);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                display.appendText("\n" + output);
+            }
+        });
+
     }
 }
 
