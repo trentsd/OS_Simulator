@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 
@@ -87,7 +88,11 @@ public class CommandLine {
     }
 
     private String doCD(){
-        this.jobFileDirectory = Paths.get(cli.next());
+        try{
+            this.jobFileDirectory = Paths.get(cli.next());
+        }catch (NoSuchElementException e){
+            Main.gui.displayText("Please specify a directory to switch to.");
+        }
         return "Changed directory";
     }
 
