@@ -168,11 +168,13 @@ public class MMU {
      * @return a random virtual address
      * //TODO Possibly change minimum from 0 to account for kernel space?
      */
-    public static long getRandomAddress() {
+    public int[] getRandomAddress(int pid) {
         Random random = new Random();
-        int first = random.nextInt(Integer.MAX_VALUE);
-        long second = (long) random.nextInt(Integer.MAX_VALUE) + 1;
-        return first + second;
+        int numPages = this.memory.getPageTables().get(pid).length();
+        int randomPage = RNGesus.randInRange(0, numPages);
+        int offset = RNGesus.randInRange(0, 4095);
+        int[] logicalAddres = new int[]{pid, 0, randomPage, offset};
+        return logicalAddres;
     }
 
     /**
@@ -343,6 +345,10 @@ public class MMU {
             storageOcc += pSpace;
         }
         return storageOcc;
+    }
+
+    public void free(int pid){
+        this.memory.releaseProcessData(pid);
     }
 
     public static void main(String[] args) {

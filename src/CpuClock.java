@@ -85,6 +85,7 @@ public class CpuClock extends Thread {
                     System.out.println("log: process " + proc1.getName() + " finished.");
                     runningProcs.remove(proc1);
                     proc1.state = States.EXIT;
+                    Main.mmu.free(proc1.getPid());
                     proc1 = (ProcessControlBlock) readyProcs.poll();
                     if (proc1 != null) {
                         runningProcs.add(proc1);
@@ -119,6 +120,7 @@ public class CpuClock extends Thread {
                     System.out.println("log: process " + proc2.getName() + " finished.");
                     runningProcs.remove(proc2);
                     proc2.state = States.EXIT;
+                    Main.mmu.free(proc2.getPid());
                     proc2 = (ProcessControlBlock) readyProcs.poll();
                     if (proc2 != null) {
                         runningProcs.add(proc2);
@@ -153,6 +155,7 @@ public class CpuClock extends Thread {
                     System.out.println("log: process " + proc3.getName() + " finished.");
                     runningProcs.remove(proc3);
                     proc3.state = States.EXIT;
+                    Main.mmu.free(proc3.getPid());
                     proc3 = (ProcessControlBlock) readyProcs.poll();
                     if (proc3 != null) {
                         runningProcs.add(proc3);
@@ -187,6 +190,7 @@ public class CpuClock extends Thread {
                     System.out.println("log: process " + proc4.getName() + " finished.");
                     runningProcs.remove(proc4);
                     proc4.state = States.EXIT;
+                    Main.mmu.free(proc4.getPid());
                     proc4 = (ProcessControlBlock) readyProcs.poll();
                     if (proc4 != null) {
                         runningProcs.add(proc4);
@@ -257,6 +261,7 @@ public class CpuClock extends Thread {
                     execute--;
                 } else {
                     proc.state = States.EXIT;
+                    Main.mmu.free(proc.getPid());
                     runningProcs.remove(proc);
                     System.out.println("log: " + proc.getName() + " finished.");
 
@@ -357,6 +362,7 @@ public class CpuClock extends Thread {
             proc = checkCommand(proc);
 
             proc.state = States.EXIT;
+            Main.mmu.free(proc.getPid());
             runningProcs.remove(proc);
             System.out.println("log: " + proc.getName() + " finished.");
 

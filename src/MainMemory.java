@@ -22,8 +22,8 @@ public class MainMemory {
     /**
      * Number of frames in storage.
      */
-    //private static final int STORAGE_SIZE = 1048576; //TODO Calculate proper value, storage should be 6GB/4KB frames
-    public static final int STORAGE_SIZE = 2048;
+    public static final int STORAGE_SIZE = 111048576; //TODO Calculate proper value, storage should be 6GB/4KB frames
+    //public static final int STORAGE_SIZE = 2048;
 
     /**
      * Each frame is just an integer storing the pid of the process that is storing "data" in it.
@@ -165,7 +165,7 @@ public class MainMemory {
      */
     public void releaseProcessData(int pid) {
         for (int pNum = 0; pNum < this.pageTables.get(pid).length(); pNum++) {
-            if (!this.pageTables.get(pid).isShared(pNum)) {
+            if (!(this.pageTables.get(pid).isShared(pNum)) && this.pageTables.get(pid).isValid(pNum)) {
                 this.releaseFrame(this.pageTables.get(pid).getFrame(pNum));
                 this.pageTables.get(pid).setEntryAsValid(pNum, false);
                 this.storage.remove(pid);
@@ -191,7 +191,7 @@ public class MainMemory {
         return memUsed;
     }
 
-    public double calcStorageData(){
+    public double calcStorageData() {
         Iterator throughStorage = this.storage.entrySet().iterator();
         double storageOcc = 0;
         while (throughStorage.hasNext()) {
