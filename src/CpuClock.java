@@ -433,10 +433,12 @@ public class CpuClock extends Thread {
                 return proc;
 
             case Commands.IO:
-                System.out.println("log: proc " + proc.getPid() + " encountered IO");
+                int cycles;
                 proc.decCycles();
                 proc.state = States.WAIT;
-                proc.blockTime = RNGesus.randInRange(25, 50);
+                cycles = RNGesus.randInRange(25, 50);
+                proc.blockTime = cycles;
+                System.out.println("log: proc " + proc.getPid() + " encountered internal IO of " + cycles + " cycles");
                 waitingProcs.add(proc);
                 runningProcs.remove(proc);
                 contProc = false;
@@ -455,7 +457,6 @@ public class CpuClock extends Thread {
                 return null;
 
             case Commands.OUT:
-                System.out.println("log: proc " + proc.getPid() + " outputting");
                 proc.decCycles();
                 Main.gui.displayText(proc.getNextOut());
                 return proc;

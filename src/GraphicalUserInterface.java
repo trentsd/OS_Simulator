@@ -34,6 +34,7 @@ public class GraphicalUserInterface extends Application{
     private ExecutorService executor;
     private ConcurrentLinkedQueue<Number> memDataQueue = new ConcurrentLinkedQueue<>();
     private NumberAxis xAxis;
+    private Label memUsage, storageUsage;
 
     private TableView table = new TableView();
     private TableColumn procCol;
@@ -102,6 +103,9 @@ public class GraphicalUserInterface extends Application{
         memSeries.setName("Memory Usage");
 
         lineChart.getData().add(memSeries);
+
+        memUsage = new Label("0");
+        storageUsage = new Label("0");
         infoBox.getChildren().add(lineChart);
 
         cli = Main.cli;
@@ -221,13 +225,13 @@ public class GraphicalUserInterface extends Application{
             Main.selectScheduler(1);
         });
 
-        Button shortestButton = new Button("SRTF");
+        /*Button shortestButton = new Button("SRTF");
         shortestButton.setOnAction(e -> {
             System.out.println("log: SRTF selected.");
             Main.selectScheduler(2);
-        });
+        });*/
 
-        buttons.getChildren().addAll(roundRobinButton, firstInButton, shortestButton);
+        buttons.getChildren().addAll(roundRobinButton, firstInButton);
 
 
         vertBox.getChildren().addAll(display, commandInput, buttons);
@@ -267,6 +271,9 @@ public class GraphicalUserInterface extends Application{
                 // add a item of random data to queues todo: make this actually pull data
                 updateObserver();
                 memDataQueue.add(Math.random());
+                //memDataQueue.add()
+                //memUsage.setText();
+                //storageUsage.setText();
                 Thread.sleep(200);
                 executor.execute(this);
 

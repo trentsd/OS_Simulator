@@ -17,27 +17,6 @@ public class ProcessControlBlock {
     private LinkedList commandQueue = new LinkedList();
     private LinkedList outQ = new LinkedList<String>();
 
-    /**
-     * This is now the debug constructor.
-     *
-     * todo: remove
-     * @param incubateTime
-     * @param cycles
-     * @param name
-     */
-    public ProcessControlBlock(int incubateTime, int cycles, String name){
-        this.name = name;
-        this.incubateTime = incubateTime;
-        this.cyclesRequired = cycles;
-        this.cyclesRemaining = cycles;
-
-        //Main.clock.incubatingProcs.add(this);
-        cyclesRemaining = cycles;
-        if(incubateTime > 0)
-            Main.clock.incubatingProcs.add(this);
-        else
-            spawn();
-    }
 
     public ProcessControlBlock(LinkedList commandQueue, String name, int reqMem, int incubateTime, LinkedList<String> outQ){
         this.commandQueue = commandQueue;

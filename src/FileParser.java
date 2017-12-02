@@ -107,7 +107,7 @@ public class FileParser {
                         Pattern p = Pattern.compile("\"([^\"]*)\"");
                         Matcher m = p.matcher(line);
                         if(m.find()) {
-                            System.out.println(m.group(1));
+                            //System.out.println(m.group(1));
                             String outText = m.group(1);
                             outQ.add(outText);
                             commandQueue.add(Commands.OUT);

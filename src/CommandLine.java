@@ -77,10 +77,6 @@ public class CommandLine {
                 case "EXIT":
                     output = doExit();
                     break;
-                case "DEBUG":
-                    doDebug();
-                    output = "debug";
-                    break;
                 default:
                     Main.gui.displayText(commandToken + " is not recognized as a command. Please try again.");
                     output = commandToken + " is not recognized as a command. Please try again.\n";
@@ -212,17 +208,4 @@ public class CommandLine {
         return str;
     }
 
-    private void doDebug(){
-        new ProcessControlBlock(0, 25, "a");
-        new ProcessControlBlock(0, 3, "b");
-        new ProcessControlBlock(0, 20, "c");
-        new ProcessControlBlock(0, 25, "one");
-        new ProcessControlBlock(0, 50, "two");
-        new ProcessControlBlock(0, 40, "three");
-        new ProcessControlBlock(0, 2, "four");
-        new ProcessControlBlock(0, 10, "five");
-        new ProcessControlBlock(0, 20, "six");
-
-        Main.gui.displayText("Processes loaded");
-    }
 }
