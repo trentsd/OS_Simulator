@@ -191,8 +191,11 @@ public class CommandLine {
                 System.out.println("log: NoSuchElementException in doExe()");
             }
         }
+        else {
+            Main.gui.displayText("Running...");
+        }
+
         Main.clock.execute = cycles;
-        Main.gui.displayText("Running...");
         return str;
     }
 
