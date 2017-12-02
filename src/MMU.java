@@ -58,6 +58,7 @@ public class MMU {
                 for (int pNum = 0; pNum < somePages; pNum++) {
                     freeFrame = this.memory.getFreeFrames().poll();
                     pTable.setFrame(pNum, freeFrame);
+                    pTable.valids.add(pNum);
                     pTable.setEntryAsValid(pNum, true);
                     this.memory.getFrameTable()[freeFrame] = pid;
                 }
@@ -405,8 +406,8 @@ public class MMU {
         }
 
         //Release data from a few processes
-        //mmu.memory.releaseProcessData(1);
-        //mmu.memory.releaseProcessData(6);
+        mmu.memory.releaseProcessData(20);
+        mmu.memory.releaseProcessData(6);
 
         /*for (int i = 0; i < 64; i++) {
             int[] logAddr = {64, 0, i, 0};
