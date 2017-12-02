@@ -92,8 +92,6 @@ public class GraphicalUserInterface extends Application{
         xAxis.setMinorTickVisible(false);
         NumberAxis yAxis = new NumberAxis();
 
-
-
         final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(xAxis, yAxis) {
             // Override to remove symbols on each data point
             @Override
@@ -109,6 +107,8 @@ public class GraphicalUserInterface extends Application{
 
         lineChart.getData().add(memSeries);
 
+
+        //Setup for memory labels
         memUsage = new Label();
         memUsage.textProperty().bind(memString);
         memString.set("Memory used: " + 0 + "/4096 MB");
@@ -116,8 +116,10 @@ public class GraphicalUserInterface extends Application{
         storageUsage.textProperty().bind(storString);
         storString.set("Storage used: " + 0 + " MB");
 
+        //add them to be rendered
         infoBox.getChildren().addAll(lineChart, memUsage, storageUsage);
 
+        //instantiate the cli
         cli = Main.cli;
 
         System.out.println("log: GUI window created successfully.");
@@ -185,6 +187,7 @@ public class GraphicalUserInterface extends Application{
         //initalize graph
         init(stage, mainPane);
 
+        //setup the console
         VBox vertBox = new VBox();
 
         display = new TextArea();
@@ -196,23 +199,22 @@ public class GraphicalUserInterface extends Application{
 
         TextField commandInput = new TextField();
         commandInput.setMaxWidth(400);
-        commandInput.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent keyEvent) {
-                if(keyEvent.getCode() == KeyCode.ENTER) {
 
-                    String input = commandInput.getText();
+        //do this when user hits enter
+        commandInput.setOnKeyPressed(keyEvent -> {
+            if(keyEvent.getCode() == KeyCode.ENTER) {
 
-                    new Thread(new Runnable(){
-                        @Override
-                        public void run() {
-                            cli.interpretInput(input);
+                String input = commandInput.getText();//get the text from the input field
 
-                        }
-                    }).start();
+                new Thread(new Runnable(){//run the parsing in a new thread
+                    @Override
+                    public void run() {
+                        cli.interpretInput(input);//parse input
 
-                    commandInput.setText("");
-                }
+                    }
+                }).start();
+
+                commandInput.setText("");//reset input line
             }
         });
 
@@ -221,14 +223,14 @@ public class GraphicalUserInterface extends Application{
         //Scheduler buttons
         HBox buttons = new HBox();
 
-        Button roundRobinButton = new Button("RR");
+        Button roundRobinButton = new Button("Round Robin");
         roundRobinButton.setOnAction(e -> {
             System.out.println("log: Round Robbin selected.");
             displayText("Round Robin selected");
             Main.selectScheduler(0);
         });
 
-        Button firstInButton = new Button("FcFs");
+        Button firstInButton = new Button("First Come First Serve");
         firstInButton.setOnAction(e -> {
             System.out.println("log: FcFs selected.");
             displayText("First Come First Serve selected");
@@ -254,7 +256,7 @@ public class GraphicalUserInterface extends Application{
 
 
 
-        //---graph stuff---
+        //set graph updating to its own thread
         executor = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable runnable) {
@@ -263,8 +265,10 @@ public class GraphicalUserInterface extends Application{
                 return thread;
             }
         });
+
         commandInput.requestFocus();
 
+        //graph startup
         AddToQueue addToQueue = new AddToQueue();
         executor.execute(addToQueue);
 
@@ -282,7 +286,7 @@ public class GraphicalUserInterface extends Application{
 
                 memDataQueue.add(Main.mmu.getMemFramesPercent());
 
-                Thread.sleep(200);
+                Thread.sleep(500);
                 executor.execute(this);
 
             } catch (InterruptedException ex) {
@@ -318,9 +322,10 @@ public class GraphicalUserInterface extends Application{
         xAxis.setLowerBound(xSeriesData - MAX_DATA_POINTS);
         xAxis.setUpperBound(xSeriesData - 1);
 
-        int mgbUse = (Main.mmu.getMemFramesUsed()*4)/1024;
+        int kbUse = (Main.mmu.getMemFramesUsed()*4);
+        int mgbUse = kbUse/1024;
         int storUse = (Main.mmu.getStorageFramesUsed()*4)/1024;
-        memString.set("Memory used: " + mgbUse + "/4096 MB");
+        memString.set("Memory used: " + mgbUse + "/4096 MB (" + kbUse + " kb)");
         storString.set("Storage used: " + storUse + " MB");
     }
 
@@ -328,11 +333,8 @@ public class GraphicalUserInterface extends Application{
         launch();
     }
 
-    public void updateObserver(){
+    public void updateObserver(){ //pulls info on processes from cpu
         procsObserver.clear();
-        /*for(int i = 0; i < CpuClock.procs.size(); i++){
-            procsObserver.add((ProcessControlBlock)CpuClock.procs.get(i));
-        }*/
 
         try{
             procsObserver.addAll(Main.clock.allProcs);
@@ -359,7 +361,7 @@ public class GraphicalUserInterface extends Application{
             }
         });
 
-    }
+    } //prints text to console display
 }
 
 
