@@ -1,6 +1,8 @@
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -34,6 +36,10 @@ public class GraphicalUserInterface extends Application{
     private ExecutorService executor;
     private ConcurrentLinkedQueue<Number> memDataQueue = new ConcurrentLinkedQueue<>();
     private NumberAxis xAxis;
+    private StringProperty memString = new SimpleStringProperty();
+    private StringProperty storString = new SimpleStringProperty();
+
+    private Label memUsage, storageUsage;
 
     private TableView table = new TableView();
     private TableColumn procCol;
@@ -102,7 +108,15 @@ public class GraphicalUserInterface extends Application{
         memSeries.setName("Memory Usage");
 
         lineChart.getData().add(memSeries);
-        infoBox.getChildren().add(lineChart);
+
+        memUsage = new Label();
+        memUsage.textProperty().bind(memString);
+        memString.set("Memory used: " + 0 + "/4096 MB");
+        storageUsage = new Label();
+        storageUsage.textProperty().bind(storString);
+        storString.set("Storage used: " + 0 + " MB");
+
+        infoBox.getChildren().addAll(lineChart, memUsage, storageUsage);
 
         cli = Main.cli;
 
@@ -221,13 +235,13 @@ public class GraphicalUserInterface extends Application{
             Main.selectScheduler(1);
         });
 
-        Button shortestButton = new Button("SRTF");
+        /*Button shortestButton = new Button("SRTF");
         shortestButton.setOnAction(e -> {
             System.out.println("log: SRTF selected.");
             Main.selectScheduler(2);
-        });
+        });*/
 
-        buttons.getChildren().addAll(roundRobinButton, firstInButton, shortestButton);
+        buttons.getChildren().addAll(roundRobinButton, firstInButton);
 
 
         vertBox.getChildren().addAll(display, commandInput, buttons);
@@ -264,9 +278,10 @@ public class GraphicalUserInterface extends Application{
     private class AddToQueue implements Runnable {
         public void run() {
             try {
-                // add a item of random data to queues todo: make this actually pull data
                 updateObserver();
-                memDataQueue.add(Math.random());
+
+                memDataQueue.add(Main.mmu.getMemFramesPercent());
+
                 Thread.sleep(200);
                 executor.execute(this);
 
@@ -302,6 +317,11 @@ public class GraphicalUserInterface extends Application{
         // update
         xAxis.setLowerBound(xSeriesData - MAX_DATA_POINTS);
         xAxis.setUpperBound(xSeriesData - 1);
+
+        int mgbUse = (Main.mmu.getMemFramesUsed()*4)/1024;
+        int storUse = (Main.mmu.getStorageFramesUsed()*4)/1024;
+        memString.set("Memory used: " + mgbUse + "/4096 MB");
+        storString.set("Storage used: " + storUse + " MB");
     }
 
     public void show(){
@@ -321,6 +341,7 @@ public class GraphicalUserInterface extends Application{
         }
 
 
+
     }
 
 
@@ -331,7 +352,13 @@ public class GraphicalUserInterface extends Application{
     }
 
     public void displayText(String output){
-        display.appendText("\n" + output);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                display.appendText("\n" + output);
+            }
+        });
+
     }
 }
 
