@@ -8,7 +8,7 @@ public class TLB {
     /**
      * Size of TLB. This number can be changed.
      */
-    public static final int TLB_SIZE = 4;
+    public static final int TLB_SIZE = 256;
 
     /**
      * //Bad bad bad bad bad
@@ -72,12 +72,10 @@ public class TLB {
         }
         this.tlb[index] = tlbEntry;
         this.queue.add(p2);
-        System.out.println(this.toString());
     }
 
     public int selectVictim(){
         int victim = this.queue.poll();
-        System.out.println("\nVictim entry == " + victim + "\n");
         return victim;
     }
 
