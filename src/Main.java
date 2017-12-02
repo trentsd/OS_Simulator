@@ -11,6 +11,7 @@ public class Main {
     static BlockingQueue queue = new LinkedBlockingQueue();
     static GraphicalUserInterface gui;
     static int pid = 0; // I really should lose my programming license for this
+    static MMU mmu = new MMU();
 
     public static void main(String[] args) {
 

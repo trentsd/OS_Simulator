@@ -123,6 +123,7 @@ public class ProcessControlBlock {
     public void spawn(){
         Main.clock.incubatingProcs.remove(this);
         Main.clock.newProcs.add(this);//spawn proc into new queue
+        Main.mmu.loadProc(this.pid, this.reqMem);
         state = States.NEW;
         //request mem
         Main.clock.newProcs.remove(this);//move proc into the ready queue once it has memory allocated
