@@ -131,7 +131,7 @@ public class GraphicalUserInterface extends Application{
 
         BorderPane mainPane = new BorderPane();
         window = stage;
-        window.setTitle("DANK.os");
+        window.setTitle("SWEAT&TEARS.os");
 
         //table setup
         procsObserver = FXCollections.observableArrayList();
