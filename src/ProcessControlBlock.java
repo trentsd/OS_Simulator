@@ -1,4 +1,5 @@
 import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 public class ProcessControlBlock {
@@ -14,6 +15,7 @@ public class ProcessControlBlock {
     public int reqMem; //in KB
 
     private LinkedList commandQueue = new LinkedList();
+    private LinkedList outQ = new LinkedList<String>();
 
     /**
      * This is now the debug constructor.
@@ -37,11 +39,12 @@ public class ProcessControlBlock {
             spawn();
     }
 
-    public ProcessControlBlock(LinkedList commandQueue, String name, int reqMem, int incubateTime){
+    public ProcessControlBlock(LinkedList commandQueue, String name, int reqMem, int incubateTime, LinkedList<String> outQ){
         this.commandQueue = commandQueue;
         this.name = name;
         this.reqMem = reqMem;
         this.cyclesRequired = commandQueue.size();
+        this.outQ = outQ;
         this.cyclesRemaining = this.cyclesRequired;
 
         this.pid = Main.pid; //evil horrible global state
@@ -104,6 +107,10 @@ public class ProcessControlBlock {
 
     public int getNextCommand(){
         return (int)commandQueue.poll();
+    }
+
+    public String getNextOut(){
+        return (String)outQ.poll();
     }
 
     public boolean incubate(){
