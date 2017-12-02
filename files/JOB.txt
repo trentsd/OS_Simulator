@@ -1,2 +1,0 @@
-LOAD test prog 0 50
-EXE 25
