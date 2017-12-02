@@ -1,2 +1,7 @@
 LOAD test prog 0 50
+LOAD bitter prog 0 50
+LOAD eldritch prog 0 100
+LOAD ramses prog 0 1
+LOAD sanguine prog 75 100
+LOAD slovenly prog 50 100
 EXE 25
