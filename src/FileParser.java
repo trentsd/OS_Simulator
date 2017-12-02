@@ -25,11 +25,11 @@ public class FileParser {
      * @param filename
      * @param waitCycles
      */
-    public static void parse(Path filename, int waitCycles){
+    public static void parse(Path filename, int waitCycles, String procName){
         File f = filename.toFile();
 
         try(BufferedReader r = new BufferedReader(new FileReader(f))){
-            parseProgram(r, waitCycles);
+            parseProgram(r, waitCycles, procName);
         }catch (FileNotFoundException e) {
             Main.gui.displayText("File " + filename.toAbsolutePath().toString() + " not found. Check to make " +
                     "sure working directory is correct or try changing directories with CD <directory> .");
@@ -64,7 +64,7 @@ public class FileParser {
         }
     }
 
-    private static void parseProgram(BufferedReader r, int waitCycle){
+    private static void parseProgram(BufferedReader r, int waitCycle, String procName){
         String line;
         LinkedList commandQueue = new LinkedList<Integer>();
         LinkedList outQ = new LinkedList<String>();
@@ -116,7 +116,7 @@ public class FileParser {
                 }
             }
 
-            new ProcessControlBlock(commandQueue, "abc", memReq, waitCycle, outQ);
+            new ProcessControlBlock(commandQueue, procName, memReq, waitCycle, outQ);
         } catch(IOException e){
             e.printStackTrace();
             System.out.println("Exception caught in parseProgram()");
