@@ -429,10 +429,7 @@ public class CpuClock extends Thread {
         execute = 0;
 
         //free memory
-        for(int i = 0; i < allProcs.size(); i++){
-            ProcessControlBlock temp = (ProcessControlBlock)allProcs.poll();
-            Main.mmu.free(temp.getPid());
-        }
+        Main.mmu.clearAll();
 
         //dump processes from queues/ lists
         proc1 = null;

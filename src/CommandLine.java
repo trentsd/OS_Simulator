@@ -107,7 +107,7 @@ public class CommandLine {
 
         for(int i = 0; i < procs.size(); i++){
             ProcessControlBlock temp = (ProcessControlBlock)procs.get(i);
-            output.append(temp.getName() + " " + temp.getCyclesRemaining() +"\n");
+            output.append(temp.getName() + " " + temp.getCyclesRemaining() + " " + temp.reqMem + " kb" + "\n");
         }
 
         Main.gui.displayText(output.toString());
